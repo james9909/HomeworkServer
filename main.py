@@ -1,5 +1,6 @@
 import requests
 import re
+import argparse
 from urllib import unquote_plus
 from bs4 import BeautifulSoup
 
@@ -10,7 +11,7 @@ student_id = ""
 
 base_url = "http://bert.stuy.edu"
 submit = "submit_homework2"
-view = "view2"
+view = "homework_view2"
 store_homework = "store_homework"
 url = ""
 
@@ -58,7 +59,6 @@ def parse_homeworks(html):
     '''
     soup = BeautifulSoup(html, "lxml")
     links = []
-    print soup
     for a in soup.find_all("a", attrs={"class": "", "href": True}): # Homework links do not have classes
         link = a["href"]
         links.append(link)
@@ -121,13 +121,14 @@ def submit_homework(homework):
 
     contents = open(homework, "r").read()
     data = {"page": store_homework, "id4": student_id, "classid": period, "assignmentid": str(option), "teacher_comment": comment, "submit": "Submit this assignment"}
-    request = requests.post(url, data=data, files={"filecontents": (homework, open(homework, "rb"))})
+    request = requests.post(url, data=data, files={"filecontents": (homework, open(homework, "r"))})
     if request.status_code == 200:
         print "Homework successfully submitted"
     else:
         print "Failed to submit file"
 
 def view_homework():
+    global url
     page = get_page(url, period, name, password, view)
     homeworks = parse_homeworks(page)
     if len(homeworks) == 0:
@@ -149,10 +150,31 @@ def view_homework():
         else:
             break
 
-    print "Selected %s" % (homeworks[option])
     url = "http://bert.stuy.edu/cbrown/fall2015/" + homeworks[option]
     download_file(url)
 
-init_settings()
-submit_homework("main.py")
-# view_homework()
+def main():
+    init_settings()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-s",
+        "--file",
+        nargs=1,
+        help="submit homework"
+    )
+    parser.add_argument(
+        "-v",
+        "--view",
+        help="view homework",
+        action="store_true"
+    )
+    args = parser.parse_args()
+    if args.view:
+        view_homework()
+    elif args.file:
+        submit_homework(args.submit[0])
+    else:
+        parser.parse_args(["-h"])
+
+if __name__ == '__main__':
+    main()
