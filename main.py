@@ -1,6 +1,32 @@
 import requests
+import re
 from urllib import unquote_plus
 from bs4 import BeautifulSoup
+
+name = ""
+password = ""
+period = ""
+student_id = ""
+
+base_url = "http://bert.stuy.edu"
+submit = "submit_homework2"
+view = "view2"
+store_homework = "store_homework"
+url = ""
+
+def init_settings():
+    '''
+    Initializes variables based on settings configuration
+    '''
+    global name, password, period, student_id, teacher, semester, url
+    settings = open("settings.conf", "r").readlines()
+    name = re.findall('"([^"]*)"', settings[0])[0]
+    password = re.findall('"([^"]*)"', settings[1])[0]
+    period = re.findall('"([^"]*)"', settings[2])[0]
+    student_id = re.findall('"([^"]*)"', settings[3])[0]
+    teacher = re.findall('"([^"]*)"', settings[4])[0]
+    semester = re.findall('"([^"]*)"', settings[5])[0]
+    url = "%s/%s/%s/pages.py" % (base_url, teacher, semester)
 
 def get_page(url, period, name, password, page):
     '''
@@ -63,7 +89,7 @@ def parse_assignments(html):
     return assignments
 
 def submit_homework(homework):
-    page = get_page("http://bert.stuy.edu/cbrown/fall2015/pages.py", "p9", "rCqQhtiJ%3BWang%2C+James", "password", "submit_homework2")
+    page = get_page(url, period, name, password, submit)
     assignments = parse_assignments(page)
     titles = []
     for assignment in assignments:
@@ -94,15 +120,15 @@ def submit_homework(homework):
         break
 
     contents = open(homework, "r").read()
-    data = {"page": "store_homework", "id4": "3497", "classid": "p9", "assignmentid": str(option), "teacher_comment": comment, "submit": "Submit this assignment"}
-    request = requests.post("http://bert.stuy.edu/cbrown/fall2015/pages.py", data=data, files={"filecontents": (homework, open(homework, "rb"))})
+    data = {"page": store_homework, "id4": student_id, "classid": period, "assignmentid": str(option), "teacher_comment": comment, "submit": "Submit this assignment"}
+    request = requests.post(url, data=data, files={"filecontents": (homework, open(homework, "rb"))})
     if request.status_code == 200:
         print "Homework successfully submitted"
     else:
         print "Failed to submit file"
 
 def view_homework():
-    page = get_page("http://bert.stuy.edu/cbrown/fall2015/pages.py", "p9", "rCqQhtiJ%3BWang%2C+James", "password", "homework_view2")
+    page = get_page(url, period, name, password, view)
     homeworks = parse_homeworks(page)
     if len(homeworks) == 0:
         print "Could not fetch homeworks"
@@ -127,5 +153,6 @@ def view_homework():
     url = "http://bert.stuy.edu/cbrown/fall2015/" + homeworks[option]
     download_file(url)
 
+init_settings()
 submit_homework("main.py")
 # view_homework()
