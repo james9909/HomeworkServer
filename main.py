@@ -4,38 +4,37 @@ import argparse
 from urllib import unquote_plus
 from bs4 import BeautifulSoup
 
-name = ""
-password = ""
-period = ""
-student_id = ""
+NAME = ""
+PASSWORD = ""
+PERIOD = ""
+STUDENT_ID = ""
 
-base_url = "http://bert.stuy.edu"
+BASE_URL = "http://bert.stuy.edu"
 submit = "submit_homework2"
 view = "homework_view2"
-store_homework = "store_homework"
-url = ""
+STORE_HOMEWORK = "store_homework"
+URL = ""
 
 def init_settings():
     '''
     Initializes variables based on settings configuration
     '''
-    global name, password, period, student_id, teacher, semester, url
+    global NAME, PASSWORD, PERIOD, STUDENT_ID, TEACHER, SEMESTER, URL
     settings = open("settings.conf", "r").readlines()
-    name = re.findall('"([^"]*)"', settings[0])[0]
-    password = re.findall('"([^"]*)"', settings[1])[0]
-    period = re.findall('"([^"]*)"', settings[2])[0]
-    student_id = re.findall('"([^"]*)"', settings[3])[0]
-    teacher = re.findall('"([^"]*)"', settings[4])[0]
-    semester = re.findall('"([^"]*)"', settings[5])[0]
-    url = "%s/%s/%s/pages.py" % (base_url, teacher, semester)
+    NAME = unquote_plus(re.findall('"([^"]*)"', settings[0])[0])
+    PASSWORD = re.findall('"([^"]*)"', settings[1])[0]
+    PERIOD = re.findall('"([^"]*)"', settings[2])[0]
+    STUDENT_ID = re.findall('"([^"]*)"', settings[3])[0]
+    TEACHER = re.findall('"([^"]*)"', settings[4])[0]
+    SEMESTER = re.findall('"([^"]*)"', settings[5])[0]
+    URL = "%s/%s/%s/pages.py" % (BASE_URL, TEACHER, SEMESTER)
 
-def get_page(url, period, name, password, page):
+def get_page(page):
     '''
     Returns html of the requested page
     '''
-    name = unquote_plus(name)
-    data = {"classes": period, "students": name, "password": password, "Submit": "Submit", "page": page}
-    request = requests.post(url, data=data)
+    data = {"classes": PERIOD, "students": NAME, "password": PASSWORD, "Submit": "Submit", "page": page}
+    request = requests.post(URL, data=data)
     return request.text
 
 def download_file(url, name=None):
@@ -89,7 +88,18 @@ def parse_assignments(html):
     return assignments
 
 def submit_homework(homework):
-    page = get_page(url, period, name, password, submit)
+    page = get_page(submit)
+
+    if "not found" in page:
+        print "Page not found"
+        return
+    elif "Incorrect password" in page:
+        print "Invalid credentials"
+        return
+    elif "Cannot find class" in page:
+        print "Invalid period"
+        return
+
     assignments = parse_assignments(page)
     titles = []
     for assignment in assignments:
@@ -115,21 +125,31 @@ def submit_homework(homework):
     comment = ""
     while True:
         answer = str(raw_input("Would you like to write a comment to the teacher? [y/n] "))
-        if answer.lower == "y":
+        if answer.lower() == "y":
             comment = str(raw_input("Please enter your comment: "))
         break
 
     contents = open(homework, "r").read()
-    data = {"page": store_homework, "id4": student_id, "classid": period, "assignmentid": str(option), "teacher_comment": comment, "submit": "Submit this assignment"}
-    request = requests.post(url, data=data, files={"filecontents": (homework, open(homework, "r"))})
+    data = {"page": STORE_HOMEWORK, "id4": STUDENT_ID, "classid": PERIOD, "assignmentid": str(option), "teacher_comment": comment, "submit": "Submit this assignment"}
+    request = requests.post(URL, data=data, files={"filecontents": (homework, open(homework, "r"))})
     if request.status_code == 200:
         print "Homework successfully submitted"
     else:
         print "Failed to submit file"
 
 def view_homework():
-    global url
-    page = get_page(url, period, name, password, view)
+    page = get_page(view)
+
+    if "not found" in page:
+        print "Page not found"
+        return
+    elif "Incorrect password" in page:
+        print "Invalid credentials"
+        return
+    elif "Cannot find class" in page:
+        print "Invalid period"
+        return
+
     homeworks = parse_homeworks(page)
     if len(homeworks) == 0:
         print "Could not fetch homeworks"
@@ -172,7 +192,7 @@ def main():
     if args.view:
         view_homework()
     elif args.file:
-        submit_homework(args.submit[0])
+        submit_homework(args.file[0])
     else:
         parser.parse_args(["-h"])
 
