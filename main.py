@@ -3,6 +3,7 @@ import re
 import argparse
 from urllib import unquote_plus
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 NAME = ""
 PASSWORD = ""
@@ -28,6 +29,13 @@ def init_settings():
     TEACHER = re.findall('"([^"]*)"', settings[4])[0]
     SEMESTER = re.findall('"([^"]*)"', settings[5])[0]
     URL = "%s/%s/%s/pages.py" % (BASE_URL, TEACHER, SEMESTER)
+
+def is_late(due_date):
+    due_date = datetime.strptime(due_date, "%m/%d/%Y %H")
+    now = datetime.now()
+    if due_date < now:
+        return "- Late"
+    return ""
 
 def get_page(page):
     '''
@@ -105,13 +113,17 @@ def submit_homework(homework):
     for assignment in assignments:
         titles.append(assignment[:assignment.find(" (")])
 
-    i = 0
     if len(assignments) < 0:
         print "Could not fetch assignments"
         return
 
+    i = 0
     while i < len(assignments):
-        print "[%s]: %s" % (titles[i], assignments[i])
+        status = ""
+        assignment = assignments[i]
+        due_date = assignment[assignment.find(" (")+7:].strip(":00a)")
+        status = is_late(due_date)
+        print "[%s] %s %s" % (titles[i], due_date, status)
         i += 1
 
     while True:
