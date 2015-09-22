@@ -92,6 +92,9 @@ def parse_homeworks(html):
         label = label.encode('ascii', 'ignore') # Remove unicode
         labels.append(label[2:]) # Only the number
 
+    while len(labels) > len(links):
+        labels = labels[1:]
+
     homeworks = {}
     for x in range(len(labels)):
         try:
