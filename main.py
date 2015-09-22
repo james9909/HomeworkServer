@@ -1,6 +1,7 @@
 import requests
 import re
 import argparse
+import os
 from urllib import unquote_plus
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -21,7 +22,8 @@ def init_settings():
     Initializes variables based on settings configuration
     '''
     global NAME, PASSWORD, PERIOD, STUDENT_ID, TEACHER, SEMESTER, URL
-    settings = open("settings.conf", "r").readlines()
+    path = os.path.join(os.path.dirname(__file__), 'settings.conf')
+    settings = open(path, "r").readlines()
     NAME = unquote_plus(re.findall('"([^"]*)"', settings[0])[0])
     PASSWORD = re.findall('"([^"]*)"', settings[1])[0]
     PERIOD = re.findall('"([^"]*)"', settings[2])[0]
