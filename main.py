@@ -16,6 +16,12 @@ submit = "submit_homework2"
 view = "homework_view2"
 STORE_HOMEWORK = "store_homework"
 URL = ""
+PROXIES = {"http": "http://filtr.nycboe.org:8002",
+        "https": "http://filtr.nycboe.org:8002",
+        "ftp": "http://filtr.nycboe.org:8002"
+        }
+
+use_proxy = False
 
 def init_settings():
     '''
@@ -39,12 +45,17 @@ def is_late(due_date):
         return "- Late"
     return ""
 
-def get_page(page):
+def get_page(page, proxy=False):
     '''
     Returns html of the requested page
     '''
+    global use_proxy
     data = {"classes": PERIOD, "students": NAME, "password": PASSWORD, "Submit": "Submit", "page": page}
-    request = requests.post(URL, data=data)
+    if proxy:
+        request = requests.post(URL, data=data, proxies=PROXIES)
+        use_proxy = True
+    else:
+        request = requests.post(URL, data=data)
     return request.text
 
 def download_file(url, name=None):
@@ -53,7 +64,10 @@ def download_file(url, name=None):
     else:
         file_name = url.split('/')[-1] # Retrieve file name from url
     with open(file_name, 'wb') as output:
-        response = requests.get(url, stream=True)
+        if use_proxy:
+            response = requests.get(url, stream=True, proxies=PROXIES)
+        else:
+            response = requests.get(url, stream=True)
 
         if not response.ok:
             print "Could not fetch file"
@@ -109,6 +123,8 @@ def submit_homework(homework):
     elif "Cannot find class" in page:
         print "Invalid period"
         return
+    elif "Access to this site is blocked" in page: # School proxy :(
+        page = get_page(submit, True)
 
     assignments = parse_assignments(page)
     titles = []
@@ -145,7 +161,11 @@ def submit_homework(homework):
 
     contents = open(homework, "r").read()
     data = {"page": STORE_HOMEWORK, "id4": STUDENT_ID, "classid": PERIOD, "assignmentid": str(option), "teacher_comment": comment, "submit": "Submit this assignment"}
-    request = requests.post(URL, data=data, files={"filecontents": (homework, open(homework, "r"))})
+    if use_proxy:
+        request = requests.post(URL, data=data, proxies=PROXIES, files={"filecontents": (homework, open(homework, "r"))})
+    else:
+        request = requests.post(URL, data=data, files={"filecontents": (homework, open(homework, "r"))})
+
     if request.status_code == 200:
         print "Homework successfully submitted"
     else:
@@ -163,8 +183,11 @@ def view_homework():
     elif "Cannot find class" in page:
         print "Invalid period"
         return
+    elif "Access to this site is blocked" in page: # School proxy :(
+        page = get_page(view, True)
 
     homeworks = parse_homeworks(page)
+    print homeworks
     if len(homeworks) == 0:
         print "Could not fetch homeworks"
         return
@@ -191,17 +214,17 @@ def main():
     init_settings()
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-s",
-        "--file",
-        nargs=1,
-        help="submit homework"
-    )
+            "-s",
+            "--file",
+            nargs=1,
+            help="submit homework"
+            )
     parser.add_argument(
-        "-v",
-        "--view",
-        help="view homework",
-        action="store_true"
-    )
+            "-v",
+            "--view",
+            help="view homework",
+            action="store_true"
+            )
     args = parser.parse_args()
     if args.view:
         view_homework()
