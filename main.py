@@ -1,7 +1,9 @@
-import re
 import argparse
-import os
 import collections
+import os
+import re
+import signal
+import sys
 
 import requests
 
@@ -25,6 +27,10 @@ PROXIES = {"http": "http://filtr.nycboe.org:8002",
            }
 
 use_proxy = False
+
+def signal_handler(signal, frame):
+    print("\nExiting...")
+    sys.exit(0)
 
 def init_settings():
     """ Initializes variables based on settings configuration """
@@ -290,4 +296,5 @@ def main():
         parser.parse_args(["-h"])
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler)
     main()
