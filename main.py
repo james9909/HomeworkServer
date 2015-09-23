@@ -39,8 +39,30 @@ def init_settings():
     SEMESTER = re.findall('"([^"]*)"', settings[5])[0]
     URL = "%s/%s/%s/pages.py" % (BASE_URL, TEACHER, SEMESTER)
 
+def correct_date(date):
+    date = date.split("/")
+    if len(date[0]) != 2:
+        date[0] = "0" + date[0]
+    if len(date[1]) != 2:
+        date[1] = "0" + date[1]
+    if len(date[2]) != 6: # This includes the space and hour
+        date[2] = "20" + date[2]
+    if len(date[2]) == 10:
+        temp = date[2].split(" ")
+        hour = temp[1]
+        if "p" in hour:
+            hour = hour[:-1]
+            hour = str(int(hour.split(":")[0]) + 12) + hour[1:]
+        temp[1] = hour
+        date[2] = " ".join(temp)
+    return "/".join(date)
+
 def is_late(due_date):
-    due_date = datetime.strptime(due_date, "%m/%d/%Y %H")
+    due_date = correct_date(due_date)
+    try:
+        due_date = datetime.strptime(due_date, "%m/%d/%Y %H")
+    except:
+        due_date = datetime.strptime(due_date, "%m/%d/%Y %H:%M")
     now = datetime.now()
     if due_date < now:
         return "- Late"
@@ -93,7 +115,7 @@ def parse_homeworks(html):
     for label in soup.find_all("label", attrs={"class": ""}):
         label = label.text
         label = label.encode('ascii', 'ignore') # Remove unicode
-        labels.append(label[2:]) # Only the number
+        labels.append(label)
 
     while len(labels) > len(links):
         labels = labels[1:]
@@ -220,7 +242,7 @@ def view_homework():
         else:
             break
 
-    url = "http://bert.stuy.edu/cbrown/fall2015/" + homeworks[option]
+    url = URL.strip("pages.py") + homeworks[option]
     download_file(url, "/tmp/homeworkserver")
     os.system("cat /tmp/homeworkserver")
     option = str(raw_input("Would you like to download this file? [y/n] "))
