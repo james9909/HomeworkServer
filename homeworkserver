@@ -3,7 +3,6 @@
 import argparse
 import collections
 import os
-import re
 import signal
 import subprocess
 import sys
@@ -40,13 +39,13 @@ def init_settings():
     path = os.path.join(os.path.dirname(__file__), "settings.conf")
     settings = open(path, "r").readlines()
 
-    # Regex to grab everything within the quotations
-    NAME = re.findall('"([^"]*)"', settings[0])[0]
-    PASSWORD = re.findall('"([^"]*)"', settings[1])[0]
-    PERIOD = re.findall('"([^"]*)"', settings[2])[0]
-    STUDENT_ID = re.findall('"([^"]*)"', settings[3])[0]
-    TEACHER = re.findall('"([^"]*)"', settings[4])[0]
-    SEMESTER = re.findall('"([^"]*)"', settings[5])[0]
+    # Grab everything within quotes (Faster than re.findall)
+    NAME = settings[0].split('"')[1]
+    PASSWORD = settings[1].split('"')[1]
+    PERIOD = settings[2].split('"')[1]
+    STUDENT_ID = settings[3].split('"')[1]
+    TEACHER = settings[4].split('"')[1]
+    SEMESTER = settings[5].split('"')[1]
     URL = "%s/%s/%s/pages.py" % (BASE_URL, TEACHER, SEMESTER)
 
 def correct_date(date):
@@ -63,11 +62,9 @@ def correct_date(date):
     temp = date[2].split(" ")
     hour = temp[1]
     if "p" in hour:
-        hour = hour[:-1]
         hour = hour.split(":")
         hour = str(int(hour[0]) + 12) + ":" + hour[1]
-    elif "a" in hour:
-        hour = hour[:-1]
+    hour = hour[:-1]
     temp[1] = hour
     date[2] = " ".join(temp)
 
@@ -149,31 +146,27 @@ def parse_homeworks(html):
 def parse_assignments(html):
     """ Returns a list of homeworks that may be submitted and their due date"""
     soup = BeautifulSoup(html, "lxml")
-    temp_assignments = []
+    titles = []
 
     # Find all assignment options and get its title
     for option in soup.find_all("option"):
         title = str(option.text)  # Remove unicode
-        temp_assignments.append(title)
+        titles.append(title)
 
-    # Add the due_date to the title
-    titles = []
-    for assignment in temp_assignments:
-        titles.append(assignment[:assignment.find(" (")])
-
-    if len(temp_assignments) < 0:
+    if len(titles) < 0:
         print "Could not fetch assignments"
         return
 
     i = 0
     assignments = {}
     # Link titles with due date + status
-    while i < len(temp_assignments):
+    while i < len(titles):
+        split = titles[i].strip(")").split(" (due: ")
         status = ""
-        assignment = temp_assignments[i]
-        due_date = assignment[assignment.find(" (")+7:].strip(")")
+        assignment = split[0]
+        due_date = split[1]
         status = is_late(due_date)
-        assignments[titles[i]] = "%s %s" % (due_date, status)
+        assignments[assignment] = "%s %s" % (due_date, status)
         i += 1
 
     assignments = collections.OrderedDict(sorted(assignments.items()))  # Sort assignments in order
@@ -222,14 +215,16 @@ def view_homework():
         else:
             break
 
-    if homeworks[option][0] == None:
+    link = homeworks[option][0]
+    if link == None:
         print "This homework has not been submitted yet!"
         return
-    url = URL.strip("pages.py") + homeworks[option][0]
+    url = URL.strip("pages.py") + link
     download_file(url, "/tmp/homeworkserver")
 
+    file_type = subprocess.check_output("file /tmp/homeworkserver", shell=True)
     # Determine whether or not to preview file based on what the file is
-    if ("ASCII text" in subprocess.check_output("file /tmp/homeworkserver", shell=True)):
+    if ("ASCII text" in file_type):
         subprocess.call("cat /tmp/homeworkserver", shell=True)
     else:
         print "Preview not available for non-text files"
@@ -274,11 +269,9 @@ def submit_homework(homework):
             break
 
     comment = ""
-    while True:
-        answer = str(raw_input("Would you like to write a comment to the teacher? [y/n] "))
-        if answer.lower() == "y":
-            comment = str(raw_input("Please enter your comment: "))
-        break
+    answer = str(raw_input("Would you like to write a comment to the teacher? [y/n] "))
+    if answer.lower() == "y":
+        comment = str(raw_input("Please enter your comment: "))
 
     contents = open(homework, "r").read()
     data = {"page": STORE_HOMEWORK, "id4": STUDENT_ID, "classid": PERIOD,
