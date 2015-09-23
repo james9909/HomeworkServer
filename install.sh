@@ -1,15 +1,12 @@
 #!/bin/bash
 
-GREEN="\E[1;32m"
-RED="\E[1;31m"
-RESET="\E[0m"
 function run_with_status {
     "$@" &> /dev/null
     local status=$?
     if [ $status -ne 0 ]; then
-        echo -e "${RED}Error with $@" >&2${RESET}
+        echo -e "Error with $@" >&2
     else
-        echo -e "${GREEN}Successfully ran $@${RESET}"
+        echo -e "Successfully ran $@"
     fi
 }
 if [ "$(uname)" == "Darwin" ]; then
@@ -26,17 +23,17 @@ fi
 run_with_status pip install -r requirements.txt
 
 run_with_status sudo mkdir ~/.homeworkserver
-run_with_status sudo cp main.py ~/.homeworkserver/homeworkserver.py
+run_with_status sudo cp homeworkserver ~/.homeworkserver/homeworkserver
 run_with_status sudo cp settings.conf ~/.homeworkserver/settings.conf
 cd
 
 if [ -e ".bash_aliases" ]; then
   run_with_status sudo cp .bash_aliases alias_data
-  echo "alias homeworkserver='python ~/.homeworkserver/homeworkserver.py'" | sudo tee -a alias_data
+  echo "alias homeworkserver='~/.homeworkserver/homeworkserver'" | sudo tee -a alias_data
   run_with_status sudo mv alias_data .bash_aliases
 else
   run_with_status touch alias_data
-  echo "alias homeworkserver='python ~/.homeworkserver/homeworkserver.py'" | sudo tee -a alias_data
+  echo "alias homeworkserver='~/.homeworkserver/homeworkserver'" | sudo tee -a alias_data
   run_with_status sudo mv alias_data .bash_aliases
 fi
 source .bashrc
