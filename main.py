@@ -2,6 +2,7 @@ import requests
 import re
 import argparse
 import os
+import collections
 from urllib import unquote_plus
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -101,6 +102,8 @@ def parse_homeworks(html):
             homeworks[labels[x]] = links[x]
         except:
             break
+
+    homeworks = collections.OrderedDict(sorted(homeworks.items()))
     return homeworks
 
 def parse_assignments(html):
@@ -108,10 +111,30 @@ def parse_assignments(html):
     Returns a list of homeworks that may be submitted
     '''
     soup = BeautifulSoup(html, "lxml")
-    assignments = []
+    temp_assignments = []
     for option in soup.find_all("option"):
         title = str(option.text) # Remove unicode
-        assignments.append(title)
+        temp_assignments.append(title)
+
+    titles = []
+    for assignment in temp_assignments:
+        titles.append(assignment[:assignment.find(" (")])
+
+    if len(temp_assignments) < 0:
+        print "Could not fetch assignments"
+        return
+
+    i = 0
+    assignments = {}
+    while i < len(temp_assignments):
+        status = ""
+        assignment = temp_assignments[i]
+        due_date = assignment[assignment.find(" (")+7:].strip(":00a)")
+        status = is_late(due_date)
+        assignments[titles[i]] = "%s %s" % (due_date, status)
+        i += 1
+
+    assignments = collections.OrderedDict(sorted(assignments.items()))
     return assignments
 
 def submit_homework(homework):
@@ -130,23 +153,9 @@ def submit_homework(homework):
         page = get_page(submit, True)
 
     assignments = parse_assignments(page)
-    titles = []
+
     for assignment in assignments:
-        titles.append(assignment[:assignment.find(" (")])
-
-    if len(assignments) < 0:
-        print "Could not fetch assignments"
-        return
-
-    i = 0
-    while i < len(assignments):
-        status = ""
-        assignment = assignments[i]
-        due_date = assignment[assignment.find(" (")+7:].strip(":00a)")
-        status = is_late(due_date)
-        print "[%s] %s %s" % (titles[i], due_date, status)
-        i += 1
-
+        print "[%s] %s" % (assignment, assignments[assignment])
     while True:
         option = str(raw_input("Please select a homework to submit: "))
         if (option not in titles):
@@ -190,7 +199,6 @@ def view_homework():
         page = get_page(view, True)
 
     homeworks = parse_homeworks(page)
-    print homeworks
     if len(homeworks) == 0:
         print "Could not fetch homeworks"
         return
