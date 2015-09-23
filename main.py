@@ -233,6 +233,11 @@ def view_homework():
 
 def submit_homework(homework):
     """ Submit homework to the server """
+
+    if not os.path.isfile(homework):
+        print "File does not exist"
+        return
+
     page = get_page(SUBMIT)
 
     if "not found" in page:
