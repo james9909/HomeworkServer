@@ -116,8 +116,15 @@ def download_file(url, name=None):
         print "File downloaded as %s" % (file_name)
 
 def parse_homeworks(html):
-    """ Returns a list of homeworks that have been submitted and their links """
+    """ Returns a list of homeworks that have been submitted with their links and submission time """
     soup = BeautifulSoup(html, "lxml")
+
+    time = []
+    # Get submission time
+    for td in soup.find_all("td", attrs={"style": ["color: green;", "color: red;"]}):
+        temp = str(td.text.encode("ascii", "ignore"))
+        time.append(temp)
+
     links = []
     for a in soup.find_all("a", attrs={"class": "", "href": True}):  # Homework links do not have classes, but they have hrefs
         link = a["href"]
@@ -135,7 +142,7 @@ def parse_homeworks(html):
     homeworks = {}
     for x in range(len(labels)):
         try:
-            homeworks[labels[x]] = links[x]
+            homeworks[labels[x]] = [links[x], time[x]]
         except:
             break
 
@@ -174,6 +181,55 @@ def parse_assignments(html):
 
     assignments = collections.OrderedDict(sorted(assignments.items()))  # Sort assignments in order
     return assignments
+
+def view_homework():
+    """
+    View homeworks from the server
+
+    Will show the contents of the file before prompting a download
+    """
+    page = get_page(VIEW)
+
+    if "not found" in page:
+        print "Page not found"
+        return
+    elif "Incorrect password" in page:
+        print "Invalid credentials"
+        return
+    elif "Cannot find class" in page:
+        print "Invalid period"
+        return
+    elif "Access to this site is blocked" in page:  # School proxy :(
+        page = get_page(VIEW, True)
+
+    homeworks = parse_homeworks(page)
+    if len(homeworks) == 0:
+        print "Could not fetch homeworks"
+        return
+
+    for homework in homeworks.keys():
+        print "[%s]: %s" % (homework, homeworks[homework][1])
+
+    while True:
+        option = raw_input("Which homework would you like to view? ")
+        if (option not in homeworks.keys()):
+            if ("0" + option in homeworks.keys()):  # So the input 6 would be equal to 06, validating the input
+                option = "0" + option
+                break
+            else:
+                print "Invalid choice"
+                continue
+        else:
+            break
+
+    url = URL.strip("pages.py") + homeworks[option][0]
+    download_file(url, "/tmp/homeworkserver")
+    os.system("cat /tmp/homeworkserver")
+    option = str(raw_input("Would you like to download this file? [y/n] "))
+    if option.lower() == "y":
+        download_file(url)
+    os.system("rm /tmp/homeworkserver")
+    return
 
 def submit_homework(homework):
     """ Submit homework to the server """
@@ -222,55 +278,6 @@ def submit_homework(homework):
         print "Homework successfully submitted"
     else:
         print "Failed to submit file"
-
-def view_homework():
-    """
-    View homeworks from the server
-
-    Will show the contents of the file before prompting a download
-    """
-    page = get_page(VIEW)
-
-    if "not found" in page:
-        print "Page not found"
-        return
-    elif "Incorrect password" in page:
-        print "Invalid credentials"
-        return
-    elif "Cannot find class" in page:
-        print "Invalid period"
-        return
-    elif "Access to this site is blocked" in page:  # School proxy :(
-        page = get_page(VIEW, True)
-
-    homeworks = parse_homeworks(page)
-    if len(homeworks) == 0:
-        print "Could not fetch homeworks"
-        return
-
-    for homework in homeworks.keys():
-        print "[%s]: %s" % (homework, homeworks[homework])
-
-    while True:
-        option = raw_input("Which homework would you like to view? ")
-        if (option not in homeworks.keys()):
-            if ("0" + option in homeworks.keys()):  # So the input 6 would be equal to 06, validating the input
-                option = "0" + option
-                break
-            else:
-                print "Invalid choice"
-                continue
-        else:
-            break
-
-    url = URL.strip("pages.py") + homeworks[option]
-    download_file(url, "/tmp/homeworkserver")
-    os.system("cat /tmp/homeworkserver")
-    option = str(raw_input("Would you like to download this file? [y/n] "))
-    if option.lower() == "y":
-        download_file(url)
-    os.system("rm /tmp/homeworkserver")
-    return
 
 def main():
     init_settings()
