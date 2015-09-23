@@ -76,6 +76,8 @@ def download_file(url, name=None):
 
         for block in response.iter_content(1024):
             output.write(block)
+    if not url:
+        print "File downloaded as %s" % (file_name)
 
 def parse_homeworks(html):
     '''
@@ -158,7 +160,7 @@ def submit_homework(homework):
         print "[%s] %s" % (assignment, assignments[assignment])
     while True:
         option = str(raw_input("Please select a homework to submit: "))
-        if (option not in titles):
+        if (option not in assignments.keys()):
             print "Invalid choice"
             continue
         else:
@@ -219,7 +221,13 @@ def view_homework():
             break
 
     url = "http://bert.stuy.edu/cbrown/fall2015/" + homeworks[option]
-    download_file(url)
+    download_file(url, "/tmp/homeworkserver")
+    os.system("cat /tmp/homeworkserver")
+    option = str(raw_input("Would you like to download this file? [y/n] "))
+    if option.lower() == "y":
+        download_file(url)
+    os.system("rm /tmp/homeworkserver")
+    return
 
 def main():
     init_settings()

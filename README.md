@@ -46,6 +46,6 @@ TODO
 ----
 
 - Automatic retrieval of username based on real name
-- Display contents of file before (prompting?) downloading
+- ~~Display contents of file before (prompting?) downloading~~
 - ~~Automatically use proxy if DOE filter blocks the website~~
 - Documentation
