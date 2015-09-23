@@ -5,6 +5,7 @@ import collections
 import os
 import re
 import signal
+import subprocess
 import sys
 
 import requests
@@ -226,7 +227,13 @@ def view_homework():
         return
     url = URL.strip("pages.py") + homeworks[option][0]
     download_file(url, "/tmp/homeworkserver")
-    os.system("cat /tmp/homeworkserver")
+
+    # Determine whether or not to preview file based on what the file is
+    if ("ASCII text" in subprocess.check_output("file /tmp/homeworkserver", shell=True)):
+        subprocess.call("cat /tmp/homeworkserver", shell=True)
+    else:
+        print "Preview not available for non-text files"
+
     option = str(raw_input("Would you like to download this file? [y/n] "))
     if option.lower() == "y":
         download_file(url)
