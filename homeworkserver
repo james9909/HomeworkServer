@@ -9,7 +9,7 @@ import sys
 
 import requests
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, SoupStrainer
 from datetime import datetime
 
 NAME = ""
@@ -118,34 +118,29 @@ def download_file(url, name=None):
 
 def parse_homeworks(html):
     """ Returns a list of homeworks that have been submitted with their links and submission time """
-    soup = BeautifulSoup(html, "lxml")
-
-    time = []
-    # Get submission time
-    for td in soup.find_all("td", attrs={"style": ["color: green;", "color: red;"]}):
-        temp = str(td.text.encode("ascii", "ignore"))
-        time.append(temp)
-
-    links = []
-    for a in soup.find_all("a", attrs={"class": "", "href": True}):  # Homework links do not have classes, but they have hrefs
-        link = a["href"]
-        links.append(link)
-
-    labels = []
-    for label in soup.find_all("label", attrs={"class": ""}):
-        label = label.text
-        label = label.encode("ascii", "ignore")  # Remove unicode
-        labels.append(label)
-
-    while len(labels) > len(links):
-        labels = labels[1:]
+    soup = BeautifulSoup(html, "lxml", parse_only=SoupStrainer("table"))
 
     homeworks = {}
-    for x in range(len(labels)):
+    for table in soup:
+        time = table.find("td", attrs={"style": ["color: green;", "color: red;"]})
         try:
-            homeworks[labels[x]] = [links[x], time[x]]
+            time = time.text.encode("ascii", "ignore")
         except:
-            break
+            time = "Not submitted yet"
+
+        link = table.find("a", attrs={"class": "", "href": True})
+        try:
+            link = link["href"]
+        except:
+            link = None
+
+        label = table.find("label", attrs={"class": ""})
+        try:
+            label = label.text.encode("ascii", "ignore")
+        except:
+            label = None
+        if label is not None:
+            homeworks[label] = [link, time]
 
     homeworks = collections.OrderedDict(sorted(homeworks.items()))  # Sort homeworks in order
     return homeworks
@@ -209,7 +204,10 @@ def view_homework():
         return
 
     for homework in homeworks.keys():
-        print "[%s]: %s" % (homework, homeworks[homework][1])
+        try:
+            print "[%s]: %s" % (homework, homeworks[homework][1])
+        except:
+            print "[%s]" % (homework)
 
     while True:
         option = raw_input("Which homework would you like to view? ")
@@ -223,6 +221,9 @@ def view_homework():
         else:
             break
 
+    if homeworks[option][0] == None:
+        print "This homework has not been submitted yet!"
+        return
     url = URL.strip("pages.py") + homeworks[option][0]
     download_file(url, "/tmp/homeworkserver")
     os.system("cat /tmp/homeworkserver")
