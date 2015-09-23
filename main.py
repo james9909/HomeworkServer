@@ -1,10 +1,12 @@
-import requests
 import re
 import argparse
 import os
 import collections
-from urllib import unquote_plus
+
+import requests
+
 from bs4 import BeautifulSoup
+from urllib import unquote_plus
 from datetime import datetime
 
 NAME = ""
@@ -13,24 +15,24 @@ PERIOD = ""
 STUDENT_ID = ""
 
 BASE_URL = "http://bert.stuy.edu"
-submit = "submit_homework2"
-view = "homework_view2"
+SUBMIT = "submit_homework2"
+SUBMIT_ASSIGNMENT = "Submit this assignment"
+VIEW = "homework_view2"
 STORE_HOMEWORK = "store_homework"
 URL = ""
 PROXIES = {"http": "http://filtr.nycboe.org:8002",
-        "https": "http://filtr.nycboe.org:8002",
-        "ftp": "http://filtr.nycboe.org:8002"
-        }
+           "https": "http://filtr.nycboe.org:8002"
+           }
 
 use_proxy = False
 
 def init_settings():
-    '''
-    Initializes variables based on settings configuration
-    '''
+    """ Initializes variables based on settings configuration """
     global NAME, PASSWORD, PERIOD, STUDENT_ID, TEACHER, SEMESTER, URL
-    path = os.path.join(os.path.dirname(__file__), 'settings.conf')
+    path = os.path.join(os.path.dirname(__file__), "settings.conf")
     settings = open(path, "r").readlines()
+
+    # Regex to grab everything within the quotations
     NAME = unquote_plus(re.findall('"([^"]*)"', settings[0])[0])
     PASSWORD = re.findall('"([^"]*)"', settings[1])[0]
     PERIOD = re.findall('"([^"]*)"', settings[2])[0]
@@ -40,17 +42,18 @@ def init_settings():
     URL = "%s/%s/%s/pages.py" % (BASE_URL, TEACHER, SEMESTER)
 
 def correct_date(date):
+    """ Correct date to comply with datetime format strings """
     date = date.split("/")
-    if len(date[0]) != 2:
+    if len(date[0]) != 2:  # Fix month by appending 0
         date[0] = "0" + date[0]
-    if len(date[1]) != 2:
+    if len(date[1]) != 2:  # Fix day by appending 0
         date[1] = "0" + date[1]
-    if len(date[2]) != 6: # This includes the space and hour
+    if len(date[2]) != 6:  # Fix year by appending 20
         date[2] = "20" + date[2]
-    if len(date[2]) == 10:
+    if len(date[2]) == 10:  # Fix time in case there are minutes
         temp = date[2].split(" ")
         hour = temp[1]
-        if "p" in hour:
+        if "p" in hour:  # Fix hour by adding 12 if it is PM
             hour = hour[:-1]
             hour = str(int(hour.split(":")[0]) + 12) + hour[1:]
         temp[1] = hour
@@ -58,6 +61,7 @@ def correct_date(date):
     return "/".join(date)
 
 def is_late(due_date):
+    """ Determine if deadline for homework has passed """
     due_date = correct_date(due_date)
     try:
         due_date = datetime.strptime(due_date, "%m/%d/%Y %H")
@@ -69,9 +73,7 @@ def is_late(due_date):
     return ""
 
 def get_page(page, proxy=False):
-    '''
-    Returns html of the requested page
-    '''
+    """ Returns html of the requested page """
     global use_proxy
     data = {"classes": PERIOD, "students": NAME, "password": PASSWORD, "Submit": "Submit", "page": page}
     if proxy:
@@ -82,11 +84,12 @@ def get_page(page, proxy=False):
     return request.text
 
 def download_file(url, name=None):
+    """ Download file from url """
     if name:
         file_name = name
     else:
-        file_name = url.split('/')[-1] # Retrieve file name from url
-    with open(file_name, 'wb') as output:
+        file_name = url.split("/")[-1]  # Retrieve file name from url
+    with open(file_name, "wb") as output:
         if use_proxy:
             response = requests.get(url, stream=True, proxies=PROXIES)
         else:
@@ -102,19 +105,17 @@ def download_file(url, name=None):
         print "File downloaded as %s" % (file_name)
 
 def parse_homeworks(html):
-    '''
-    Returns a list of homeworks that have been submitted and their links
-    '''
+    """ Returns a list of homeworks that have been submitted and their links """
     soup = BeautifulSoup(html, "lxml")
     links = []
-    for a in soup.find_all("a", attrs={"class": "", "href": True}): # Homework links do not have classes
+    for a in soup.find_all("a", attrs={"class": "", "href": True}):  # Homework links do not have classes, but they have hrefs
         link = a["href"]
         links.append(link)
 
     labels = []
     for label in soup.find_all("label", attrs={"class": ""}):
         label = label.text
-        label = label.encode('ascii', 'ignore') # Remove unicode
+        label = label.encode("ascii", "ignore")  # Remove unicode
         labels.append(label)
 
     while len(labels) > len(links):
@@ -127,19 +128,20 @@ def parse_homeworks(html):
         except:
             break
 
-    homeworks = collections.OrderedDict(sorted(homeworks.items()))
+    homeworks = collections.OrderedDict(sorted(homeworks.items()))  # Sort homeworks in order
     return homeworks
 
 def parse_assignments(html):
-    '''
-    Returns a list of homeworks that may be submitted
-    '''
+    """ Returns a list of homeworks that may be submitted and their due date"""
     soup = BeautifulSoup(html, "lxml")
     temp_assignments = []
+
+    # Find all assignment options and get its title
     for option in soup.find_all("option"):
-        title = str(option.text) # Remove unicode
+        title = str(option.text)  # Remove unicode
         temp_assignments.append(title)
 
+    # Add the due_date to the title
     titles = []
     for assignment in temp_assignments:
         titles.append(assignment[:assignment.find(" (")])
@@ -150,6 +152,7 @@ def parse_assignments(html):
 
     i = 0
     assignments = {}
+    # Link titles with due date + status
     while i < len(temp_assignments):
         status = ""
         assignment = temp_assignments[i]
@@ -158,11 +161,12 @@ def parse_assignments(html):
         assignments[titles[i]] = "%s %s" % (due_date, status)
         i += 1
 
-    assignments = collections.OrderedDict(sorted(assignments.items()))
+    assignments = collections.OrderedDict(sorted(assignments.items()))  # Sort assignments in order
     return assignments
 
 def submit_homework(homework):
-    page = get_page(submit)
+    """ Submit homework to the server """
+    page = get_page(SUBMIT)
 
     if "not found" in page:
         print "Page not found"
@@ -173,8 +177,8 @@ def submit_homework(homework):
     elif "Cannot find class" in page:
         print "Invalid period"
         return
-    elif "Access to this site is blocked" in page: # School proxy :(
-        page = get_page(submit, True)
+    elif "Access to this site is blocked" in page:  # School proxy :(
+        page = get_page(SUBMIT, True)
 
     assignments = parse_assignments(page)
 
@@ -196,7 +200,8 @@ def submit_homework(homework):
         break
 
     contents = open(homework, "r").read()
-    data = {"page": STORE_HOMEWORK, "id4": STUDENT_ID, "classid": PERIOD, "assignmentid": str(option), "teacher_comment": comment, "submit": "Submit this assignment"}
+    data = {"page": STORE_HOMEWORK, "id4": STUDENT_ID, "classid": PERIOD,
+            "assignmentid": str(option), "teacher_comment": comment, "submit": SUBMIT_ASSIGNMENT}
     if use_proxy:
         request = requests.post(URL, data=data, proxies=PROXIES, files={"filecontents": (homework, open(homework, "r"))})
     else:
@@ -208,7 +213,12 @@ def submit_homework(homework):
         print "Failed to submit file"
 
 def view_homework():
-    page = get_page(view)
+    """
+    View homeworks from the server
+
+    Will show the contents of the file before prompting a download
+    """
+    page = get_page(VIEW)
 
     if "not found" in page:
         print "Page not found"
@@ -219,8 +229,8 @@ def view_homework():
     elif "Cannot find class" in page:
         print "Invalid period"
         return
-    elif "Access to this site is blocked" in page: # School proxy :(
-        page = get_page(view, True)
+    elif "Access to this site is blocked" in page:  # School proxy :(
+        page = get_page(VIEW, True)
 
     homeworks = parse_homeworks(page)
     if len(homeworks) == 0:
@@ -232,8 +242,8 @@ def view_homework():
 
     while True:
         option = raw_input("Which homework would you like to view? ")
-        if (option not in homeworks.keys()): # Robustness
-            if ("0" + option in homeworks.keys()):
+        if (option not in homeworks.keys()):
+            if ("0" + option in homeworks.keys()):  # So the input 6 would be equal to 06, validating the input
                 option = "0" + option
                 break
             else:
@@ -274,5 +284,5 @@ def main():
     else:
         parser.parse_args(["-h"])
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

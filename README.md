@@ -11,6 +11,11 @@ optional arguments:
   -s FILE, --file FILE  submit homework
   -v, --view            view homework
 ```
+
+Style Guide
+-----------
+
+https://www.python.org/dev/peps/pep-0008/
 Setup & Installation
 ------------
 
