@@ -48,16 +48,21 @@ def correct_date(date):
         date[0] = "0" + date[0]
     if len(date[1]) != 2:  # Fix day by appending 0
         date[1] = "0" + date[1]
-    if len(date[2]) != 6:  # Fix year by appending 20
+    if len(date[2]) != 10:  # Fix year by appending 20
         date[2] = "20" + date[2]
-    if len(date[2]) == 10:  # Fix time in case there are minutes
-        temp = date[2].split(" ")
-        hour = temp[1]
-        if "p" in hour:  # Fix hour by adding 12 if it is PM
-            hour = hour[:-1]
-            hour = str(int(hour.split(":")[0]) + 12) + hour[1:]
-        temp[1] = hour
-        date[2] = " ".join(temp)
+
+    # Fix hour by adding 12 if it is PM
+    temp = date[2].split(" ")
+    hour = temp[1]
+    if "p" in hour:
+        hour = hour[:-1]
+        hour = hour.split(":")
+        hour = str(int(hour[0]) + 12) + ":" + hour[1]
+    elif "a" in hour:
+        hour = hour[:-1]
+    temp[1] = hour
+    date[2] = " ".join(temp)
+
     return "/".join(date)
 
 def is_late(due_date):
@@ -156,7 +161,7 @@ def parse_assignments(html):
     while i < len(temp_assignments):
         status = ""
         assignment = temp_assignments[i]
-        due_date = assignment[assignment.find(" (")+7:].strip(":00a)")
+        due_date = assignment[assignment.find(" (")+7:].strip(")")
         status = is_late(due_date)
         assignments[titles[i]] = "%s %s" % (due_date, status)
         i += 1
