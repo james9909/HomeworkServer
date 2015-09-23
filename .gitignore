@@ -1,1 +1,4 @@
 settings.conf
+*.swp
+*.swo
+*~
