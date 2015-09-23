@@ -10,7 +10,6 @@ import sys
 import requests
 
 from bs4 import BeautifulSoup
-from urllib import unquote_plus
 from datetime import datetime
 
 NAME = ""
@@ -41,7 +40,7 @@ def init_settings():
     settings = open(path, "r").readlines()
 
     # Regex to grab everything within the quotations
-    NAME = unquote_plus(re.findall('"([^"]*)"', settings[0])[0])
+    NAME = re.findall('"([^"]*)"', settings[0])[0]
     PASSWORD = re.findall('"([^"]*)"', settings[1])[0]
     PERIOD = re.findall('"([^"]*)"', settings[2])[0]
     STUDENT_ID = re.findall('"([^"]*)"', settings[3])[0]
