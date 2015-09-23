@@ -21,6 +21,7 @@ else
     echo "Installer supports debian and mac only."
 fi
 run_with_status pip install -r requirements.txt
+run_with_status git update-index --assume-unchanged settings.conf
 
 run_with_status sudo mkdir ~/.homeworkserver
 run_with_status sudo cp homeworkserver ~/.homeworkserver/homeworkserver
