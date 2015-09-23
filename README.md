@@ -24,7 +24,7 @@ To setup the script to use your account, open up settings.conf and replace the t
 Here's an example config:
 
 ```
-name = "OCdQOtNJ;Wang, James"
+name = "3497;Wang, James"
 password = "password"
 period = "p9"
 id = "3497"
@@ -32,11 +32,7 @@ teacher = "cbrown"
 semester = "fall2015"
 ```
 
-Currently, I do not know the algorithm for encoding/decoding the student ids, so you're going to have to
-find your username yourself. In order to do so, just go onto the homework server, view the source, and find
-the value for the entry with your name. It may look like this:
-
-`<option value="vCmQztPJ;Wang, James">Wang, James</option>`
+The name consists of your 4 digit id, and full name, delimited by a semicolon.
 
 The period is a combination of 'p' and the period you have class.
 
@@ -53,3 +49,4 @@ TODO
 - ~~Display contents of file before (prompting?) downloading~~
 - ~~Automatically use proxy if DOE filter blocks the website~~
 - Documentation
+- Test for compatibility with more classes
