@@ -281,11 +281,14 @@ def submit_homework(homework):
 
 def main():
     init_settings()
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog='tool',
+        formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=30))
+
     parser.add_argument(
             "-s",
-            "--file",
+            "--submit",
             nargs=1,
+            metavar=("FILE"),
             help="submit homework"
             )
     parser.add_argument(
@@ -297,8 +300,8 @@ def main():
     args = parser.parse_args()
     if args.view:
         view_homework()
-    elif args.file:
-        submit_homework(args.file[0])
+    elif args.submit:
+        submit_homework(args.submit[0])
     else:
         parser.parse_args(["-h"])
 
