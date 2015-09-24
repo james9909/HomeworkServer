@@ -37,15 +37,15 @@ def init_settings():
     """ Initializes variables based on settings configuration """
     global NAME, PASSWORD, PERIOD, STUDENT_ID, TEACHER, SEMESTER, URL
     path = os.path.join(os.path.dirname(__file__), "settings.conf")
-    settings = open(path, "r").readlines()
+    config = {}
 
-    # Grab everything within quotes (Faster than re.findall)
-    NAME = settings[0].split('"')[1]
-    PASSWORD = settings[1].split('"')[1]
-    PERIOD = settings[2].split('"')[1]
-    STUDENT_ID = settings[3].split('"')[1]
-    TEACHER = settings[4].split('"')[1]
-    SEMESTER = settings[5].split('"')[1]
+    execfile(path, config)
+    NAME = config["name"]
+    PASSWORD = config["password"]
+    PERIOD = config["period"]
+    STUDENT_ID = config["id"]
+    TEACHER = config["teacher"]
+    SEMESTER = config["semester"]
     URL = "%s/%s/%s/pages.py" % (BASE_URL, TEACHER, SEMESTER)
 
 def correct_date(date):
