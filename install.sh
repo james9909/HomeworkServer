@@ -11,14 +11,15 @@ function run_with_status {
 }
 if [ "$(uname)" == "Darwin" ]; then
     # Mac
-    run_with_status sudo easy_install pip
+    sudo easy_install pip
 elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     # Linux
-    run_with_status sudo apt-get install python-pip python-dev build-essential libav-tools;
+    sudo apt-get update
+    sudo apt-get install python-pip python-dev build-essential libav-tools;
     run_with_status sudo pip install --upgrade pip;
     run_with_status sudo pip install --upgrade virtualenv;
 else
-    echo "Installer supports debian and mac only."
+    echo "Installer does not support windows"
 fi
 run_with_status pip install -r requirements.txt
 run_with_status git update-index --assume-unchanged settings.conf
