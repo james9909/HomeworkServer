@@ -12,6 +12,7 @@ import requests
 from bs4 import BeautifulSoup, SoupStrainer
 from datetime import datetime
 
+# Constants
 NAME = ""
 PASSWORD = ""
 PERIOD = ""
@@ -30,6 +31,7 @@ PROXIES = {"http": "http://filtr.nycboe.org:8002",
 use_proxy = False
 
 def signal_handler(signal, frame):
+    """ Intercept signal and print out a message """
     print("\nExiting...")
     sys.exit(0)
 
@@ -169,14 +171,15 @@ def parse_assignments(html):
         assignments[assignment] = "%s %s" % (due_date, status)
         i += 1
 
-    assignments = collections.OrderedDict(sorted(assignments.items()))  # Sort assignments in order
+    # Sort assignments in order
+    assignments = collections.OrderedDict(sorted(assignments.items()))
     return assignments
 
 def view_homework():
     """
     View homeworks from the server
 
-    Will show the contents of the file before prompting a download
+    Will show the contents of the file (if it's readable) before prompting a download
     """
     page = get_page(VIEW)
 
@@ -197,21 +200,15 @@ def view_homework():
         print "Could not fetch homeworks"
         return
 
+    # Print out homework and submission status
     for homework in homeworks.keys():
-        try:
-            print "[%s]: %s" % (homework, homeworks[homework][1])
-        except:
-            print "[%s]" % (homework)
+        print "[%s]: %s" % (homework, homeworks[homework][1])
 
     while True:
         option = raw_input("Which homework would you like to view? ")
         if (option not in homeworks.keys()):
-            if ("0" + option in homeworks.keys()):  # So the input 6 would be equal to 06, validating the input
-                option = "0" + option
-                break
-            else:
-                print "Invalid choice"
-                continue
+            print "Invalid choice"
+            continue
         else:
             break
 
@@ -219,8 +216,9 @@ def view_homework():
     if link == None:
         print "This homework has not been submitted yet!"
         return
-    url = URL.strip("pages.py") + link
-    download_file(url, "/tmp/homeworkserver")
+
+    url = URL[:-8] + link
+    download_file(url, "/tmp/homeworkserver")  # Download file temporarily so we can let the user preview
 
     file_type = subprocess.check_output("file /tmp/homeworkserver", shell=True)
     # Determine whether or not to preview file based on what the file is
@@ -232,7 +230,7 @@ def view_homework():
     option = str(raw_input("Would you like to download this file? [y/n] "))
     if option.lower() == "y":
         download_file(url)
-    os.system("rm /tmp/homeworkserver")
+    os.system("rm /tmp/homeworkserver")  # Remove temporary file
     return
 
 def submit_homework(homework):
@@ -258,8 +256,10 @@ def submit_homework(homework):
 
     assignments = parse_assignments(page)
 
+    # Print assignment and due date
     for assignment in assignments:
         print "[%s] %s" % (assignment, assignments[assignment])
+
     while True:
         option = str(raw_input("Please select a homework to submit: "))
         if (option not in assignments.keys()):
@@ -273,7 +273,6 @@ def submit_homework(homework):
     if answer.lower() == "y":
         comment = str(raw_input("Please enter your comment: "))
 
-    contents = open(homework, "r").read()
     data = {"page": STORE_HOMEWORK, "id4": STUDENT_ID, "classid": PERIOD,
             "assignmentid": str(option), "teacher_comment": comment, "submit": SUBMIT_ASSIGNMENT}
     if use_proxy:
@@ -287,10 +286,11 @@ def submit_homework(homework):
         print "Failed to submit file"
 
 def main():
+    signal.signal(signal.SIGINT, signal_handler)
     init_settings()
-    parser = argparse.ArgumentParser(prog='homeworkserver',
-        formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=30))
-
+    parser = argparse.ArgumentParser(
+            prog='homeworkserver', formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=30)
+            )
     parser.add_argument(
             "-s",
             "--submit",
@@ -313,5 +313,4 @@ def main():
         parser.parse_args(["-h"])
 
 if __name__ == "__main__":
-    signal.signal(signal.SIGINT, signal_handler)
     main()

@@ -48,5 +48,5 @@ TODO
 
 - ~~Display contents of file before (prompting?) downloading~~
 - ~~Automatically use proxy if DOE filter blocks the website~~
-- Documentation
+- ~~Documentation~~
 - Test for compatibility with more classes
