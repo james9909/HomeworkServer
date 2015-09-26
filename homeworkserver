@@ -8,6 +8,7 @@ import subprocess
 import sys
 
 import requests
+from requests.exceptions import ConnectionError
 
 from bs4 import BeautifulSoup, SoupStrainer
 from datetime import datetime
@@ -77,7 +78,7 @@ def is_late(due_date):
     due_date = correct_date(due_date)
     try:
         due_date = datetime.strptime(due_date, "%m/%d/%Y %H")
-    except:
+    except ValueError:
         due_date = datetime.strptime(due_date, "%m/%d/%Y %H:%M")
     now = datetime.now()
     if due_date < now:
@@ -88,11 +89,15 @@ def get_page(page, proxy=False):
     """ Returns html of the requested page """
     global use_proxy
     data = {"classes": PERIOD, "students": NAME, "password": PASSWORD, "Submit": "Submit", "page": page}
-    if proxy:
-        request = requests.post(URL, data=data, proxies=PROXIES)
-        use_proxy = True
-    else:
-        request = requests.post(URL, data=data)
+    try:
+        if proxy:
+            request = requests.post(URL, data=data, proxies=PROXIES)
+            use_proxy = True
+        else:
+            request = requests.post(URL, data=data)
+    except ConnectionError:
+        print "Error requesting page, please check your connection."
+        sys.exit(1)
     return request.text
 
 def download_file(url, name=None):
@@ -102,10 +107,14 @@ def download_file(url, name=None):
     else:
         file_name = url.split("/")[-1]  # Retrieve file name from url
     with open(file_name, "wb") as output:
-        if use_proxy:
-            response = requests.get(url, stream=True, proxies=PROXIES)
-        else:
-            response = requests.get(url, stream=True)
+        try:
+            if use_proxy:
+                response = requests.get(url, stream=True, proxies=PROXIES)
+            else:
+                response = requests.get(url, stream=True)
+        except ConnectionError:
+            print "Error downloading file, please check your connection."
+            sys.exit(1)
 
         if not response.ok:
             print "Could not fetch file"
@@ -125,19 +134,19 @@ def parse_homeworks(html):
         time = table.find("td", attrs={"style": ["color: green;", "color: red;"]})
         try:
             time = time.text.encode("ascii", "ignore")
-        except:
+        except AttributeError:
             time = "Not submitted yet"
 
         link = table.find("a", attrs={"class": "", "href": True})
         try:
             link = link["href"]
-        except:
+        except KeyError:
             link = None
 
         label = table.find("label", attrs={"class": ""})
         try:
             label = label.text.encode("ascii", "ignore")
-        except:
+        except AttributeError:
             label = None
         if label is not None:
             homeworks[label] = [link, time]
@@ -275,10 +284,14 @@ def submit_homework(homework):
 
     data = {"page": STORE_HOMEWORK, "id4": STUDENT_ID, "classid": PERIOD,
             "assignmentid": str(option), "teacher_comment": comment, "submit": SUBMIT_ASSIGNMENT}
-    if use_proxy:
-        request = requests.post(URL, data=data, proxies=PROXIES, files={"filecontents": (homework, open(homework, "r"))})
-    else:
-        request = requests.post(URL, data=data, files={"filecontents": (homework, open(homework, "r"))})
+    try:
+        if use_proxy:
+            request = requests.post(URL, data=data, proxies=PROXIES, files={"filecontents": (homework, open(homework, "r"))})
+        else:
+            request = requests.post(URL, data=data, files={"filecontents": (homework, open(homework, "r"))})
+    except ConnectionError:
+        print "Error posting file, please check your connection."
+        sys.exit(1)
 
     if request.status_code == 200:
         print "Homework successfully submitted"
