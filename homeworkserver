@@ -140,7 +140,7 @@ def parse_homeworks(html):
         link = table.find("a", attrs={"class": "", "href": True})
         try:
             link = link["href"]
-        except KeyError:
+        except TypeError:
             link = None
 
         label = table.find("label", attrs={"class": ""})
