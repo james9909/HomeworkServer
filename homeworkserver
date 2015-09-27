@@ -118,7 +118,7 @@ def download_file(url, name=None):
 
         if not response.ok:
             print "Could not fetch file"
-            return
+            return None
 
         for block in response.iter_content(1024):
             output.write(block)
@@ -166,7 +166,7 @@ def parse_assignments(html):
 
     if len(titles) < 0:
         print "Could not fetch assignments"
-        return
+        return None
 
     i = 0
     assignments = {}
@@ -194,20 +194,20 @@ def view_homework():
 
     if "not found" in page:
         print "Page not found"
-        return
+        return None
     elif "Incorrect password" in page:
         print "Invalid credentials"
-        return
+        return None
     elif "Cannot find class" in page:
         print "Invalid period"
-        return
+        return None
     elif "Access to this site is blocked" in page:  # School proxy :(
         page = get_page(VIEW, True)
 
     homeworks = parse_homeworks(page)
     if len(homeworks) == 0:
         print "Could not fetch homeworks"
-        return
+        return None
 
     # Print out homework and submission status
     for homework in homeworks.keys():
@@ -224,7 +224,7 @@ def view_homework():
     link = homeworks[option][0]
     if link == None:
         print "This homework has not been submitted yet!"
-        return
+        return None
 
     url = URL[:-8] + link
     download_file(url, "/tmp/homeworkserver")  # Download file temporarily so we can let the user preview
@@ -240,26 +240,26 @@ def view_homework():
     if option.lower() == "y":
         download_file(url)
     os.system("rm /tmp/homeworkserver")  # Remove temporary file
-    return
+    return None
 
 def submit_homework(homework):
     """ Submit homework to the server """
 
     if not os.path.isfile(homework):
         print "File does not exist"
-        return
+        return None
 
     page = get_page(SUBMIT)
 
     if "not found" in page:
         print "Page not found"
-        return
+        return None
     elif "Incorrect password" in page:
         print "Invalid credentials"
-        return
+        return None
     elif "Cannot find class" in page:
         print "Invalid period"
-        return
+        return None
     elif "Access to this site is blocked" in page:  # School proxy :(
         page = get_page(SUBMIT, True)
 
