@@ -6,6 +6,7 @@ import os
 import signal
 import subprocess
 import sys
+import termcolor
 
 import requests
 from requests.exceptions import ConnectionError
@@ -33,8 +34,16 @@ use_proxy = False
 
 def signal_handler(signal, frame):
     """ Intercept signal and print out a message """
-    print("\nExiting...")
+    print error_msg("\nExiting...")
     sys.exit(0)
+
+def success_msg(msg):
+    text = termcolor.colored(msg, "green", attrs=["bold"])
+    return text
+
+def error_msg(msg):
+    text = termcolor.colored(msg, "red", attrs=["bold"])
+    return text
 
 def init_settings():
     """ Initializes variables based on settings configuration """
@@ -82,7 +91,7 @@ def is_late(due_date):
         due_date = datetime.strptime(due_date, "%m/%d/%Y %H:%M")
     now = datetime.now()
     if due_date < now:
-        return "- Late"
+        return error_msg("- Expired")
     return ""
 
 def get_page(page, proxy=False):
@@ -96,7 +105,7 @@ def get_page(page, proxy=False):
         else:
             request = requests.post(URL, data=data)
     except ConnectionError:
-        print "Error requesting page, please check your connection."
+        print error_msg("Error requesting page, please check your connection.")
         sys.exit(1)
     return request.text
 
@@ -113,17 +122,17 @@ def download_file(url, name=None):
             else:
                 response = requests.get(url, stream=True)
         except ConnectionError:
-            print "Error downloading file, please check your connection."
+            print error_msg("Error downloading file, please check your connection.")
             sys.exit(1)
 
         if not response.ok:
-            print "Could not fetch file"
+            print error_msg("Could not fetch file")
             return None
 
         for block in response.iter_content(1024):
             output.write(block)
     if not url:
-        print "File downloaded as %s" % (file_name)
+        print error_msg("File downloaded as %s" % (file_name))
 
 def parse_homeworks(html):
     """ Returns a list of homeworks that have been submitted with their links and submission time """
@@ -165,7 +174,7 @@ def parse_assignments(html):
         titles.append(title)
 
     if len(titles) < 0:
-        print "Could not fetch assignments"
+        print error_msg("Could not fetch assignments")
         return None
 
     i = 0
@@ -193,37 +202,42 @@ def view_homework():
     page = get_page(VIEW)
 
     if "not found" in page:
-        print "Page not found"
+        print error_msg("Page not found")
         return None
     elif "Incorrect password" in page:
-        print "Invalid credentials"
+        print error_msg("Invalid credentials")
         return None
     elif "Cannot find class" in page:
-        print "Invalid period"
+        print error_msg("Invalid period")
         return None
     elif "Access to this site is blocked" in page:  # School proxy :(
         page = get_page(VIEW, True)
 
     homeworks = parse_homeworks(page)
     if len(homeworks) == 0:
-        print "Could not fetch homeworks"
+        print error_msg("Could not fetch homeworks")
         return None
 
     # Print out homework and submission status
     for homework in homeworks.keys():
-        print "[%s]: %s" % (homework, homeworks[homework][1])
+        status = homeworks[homework][1]
+        if "early" in status:
+            status = success_msg(status)
+        else:
+            status = error_msg(status)
+        print "[%s]: %s" % (homework, status)
 
     while True:
         option = raw_input("Which homework would you like to view? ")
         if (option not in homeworks.keys()):
-            print "Invalid choice"
+            print error_msg("Invalid choice")
             continue
         else:
             break
 
     link = homeworks[option][0]
     if link == None:
-        print "This homework has not been submitted yet!"
+        print error_msg("This homework has not been submitted yet!")
         return None
 
     url = URL[:-8] + link
@@ -234,7 +248,7 @@ def view_homework():
     if ("ASCII text" in file_type):
         subprocess.call("cat /tmp/homeworkserver", shell=True)
     else:
-        print "Preview not available for non-text files"
+        print error_msg("Preview not available for non-text files")
 
     option = str(raw_input("Would you like to download this file? [y/n] "))
     if option.lower() == "y":
@@ -246,19 +260,19 @@ def submit_homework(homework):
     """ Submit homework to the server """
 
     if not os.path.isfile(homework):
-        print "File does not exist"
+        print error_msg("File does not exist")
         return None
 
     page = get_page(SUBMIT)
 
     if "not found" in page:
-        print "Page not found"
+        print error_msg("Page not found")
         return None
     elif "Incorrect password" in page:
-        print "Invalid credentials"
+        print error_msg("Invalid credentials")
         return None
     elif "Cannot find class" in page:
-        print "Invalid period"
+        print error_msg("Invalid period")
         return None
     elif "Access to this site is blocked" in page:  # School proxy :(
         page = get_page(SUBMIT, True)
@@ -272,7 +286,7 @@ def submit_homework(homework):
     while True:
         option = str(raw_input("Please select a homework to submit: "))
         if (option not in assignments.keys()):
-            print "Invalid choice"
+            print error_msg("Invalid choice")
             continue
         else:
             break
@@ -290,13 +304,13 @@ def submit_homework(homework):
         else:
             request = requests.post(URL, data=data, files={"filecontents": (homework, open(homework, "r"))})
     except ConnectionError:
-        print "Error posting file, please check your connection."
+        print error_msg("Error posting file, please check your connection.")
         sys.exit(1)
 
     if request.status_code == 200:
-        print "Homework successfully submitted"
+        print success_msg("Homework successfully submitted")
     else:
-        print "Failed to submit file"
+        print error_msg("Failed to submit file")
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)
