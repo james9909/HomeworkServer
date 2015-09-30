@@ -21,11 +21,11 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
 else
     echo "Installer does not support windows"
 fi
-run_with_status pip install -r requirements.txt
+pip install -r requirements.txt
 run_with_status git update-index --assume-unchanged settings.conf
 
 run_with_status sudo mkdir ~/.homeworkserver
-run_with_status sudo cp homeworkserver ~/.homeworkserver/homeworkserver
+run_with_status sudo ln -s $PWD/homeworkserver ~/.homeworkserver/homeworkserver
 run_with_status sudo cp settings.conf ~/.homeworkserver/settings.conf
 cd
 
