@@ -6,10 +6,11 @@ import os
 import signal
 import subprocess
 import sys
-import termcolor
+import urllib
 
 import requests
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, ProxyError
+import termcolor
 
 from bs4 import BeautifulSoup, SoupStrainer
 from datetime import datetime
@@ -104,9 +105,14 @@ def get_page(page, proxy=False):
             use_proxy = True
         else:
             request = requests.post(URL, data=data)
-    except ConnectionError:
-        print error_msg("Error requesting page, please check your connection.")
+    except ProxyError:
+        print error_msg("Error requesting page. There's an error with the following proxies:")
+        print urllib.getproxies()
         sys.exit(1)
+    except ConnectionError:
+        print error_msg("Error requesting page. Are you connected to the internet?")
+        sys.exit(1)
+
     return request.text
 
 def download_file(url, name=None):
@@ -121,8 +127,12 @@ def download_file(url, name=None):
                 response = requests.get(url, stream=True, proxies=PROXIES)
             else:
                 response = requests.get(url, stream=True)
+        except ProxyError:
+            print error_msg("Error downloading file. There's an error with the following proxies:")
+            print urllib.getproxies()
+            sys.exit(1)
         except ConnectionError:
-            print error_msg("Error downloading file, please check your connection.")
+            print error_msg("Error downloading file. Are you connected to the internet?")
             sys.exit(1)
 
         if not response.ok:
@@ -303,8 +313,12 @@ def submit_homework(homework):
             request = requests.post(URL, data=data, proxies=PROXIES, files={"filecontents": (homework, open(homework, "r"))})
         else:
             request = requests.post(URL, data=data, files={"filecontents": (homework, open(homework, "r"))})
+    except ProxyError:
+        print error_msg("Error posting file. There's an error with the following proxies:")
+        print urllib.getproxies()
+        sys.exit(1)
     except ConnectionError:
-        print error_msg("Error posting file, please check your connection.")
+        print error_msg("Error posting file. Are you connected to the internet?")
         sys.exit(1)
 
     if request.status_code == 200:
