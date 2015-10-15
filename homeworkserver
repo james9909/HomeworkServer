@@ -326,6 +326,49 @@ def submit_homework(homework):
     else:
         print error_msg("Failed to submit file")
 
+def update_credentials():
+    # Get actual settings file from where the script is located
+    path = os.path.join(os.path.dirname(__file__), "settings.conf")
+    f = open(path, "r")
+    settings = f.readlines()
+    while True:
+        print "================================================================="
+        print "Current config:"
+        print "".join(settings)
+        print "1)  Update username"
+        print "2)  Update password"
+        print "3)  Update period"
+        print "4)  Update id"
+        print "5)  Update teacher"
+        print "6)  Update semester"
+        print "7)  Done"
+        option = str(raw_input("\nWhat would you like to do? "))
+        if option == "1":
+            name = str(raw_input("Please enter your new username: (ID;last, first) "))
+            settings[0] = "name = \"%s\"\n" % (name)
+        elif option == "2":
+            password = str(raw_input("Please enter your new password: "))
+            settings[1] = "password = \"%s\"\n" % (password)
+        elif option == "3":
+            period = str(raw_input("Please enter your new period: (p<1-10>) "))
+            settings[2] = "period = \"%s\"\n" % (period)
+        elif option == "4":
+            sid = str(raw_input("Please enter your new Id: (####) "))
+            settings[3] = "id = \"%s\"\n" % (sid)
+        elif option == "5":
+            teacher = str(raw_input("Please enter the name of your new teacher: (first[0]+last) "))
+            settings[4] = "teacher = \"%s\"\n" % (teacher)
+        elif option == "6":
+            semester = str(raw_input("Please enter your new semester: (<fall/spring>+year)"))
+            settings[5] = "semester = \"%s\"" % (semester)
+        elif option == "7":
+            f.close()
+            f = open(path, "w")
+            f.write("".join(settings))
+            f.close()
+            success_msg("Successfully updated settings")
+            sys.exit(0)
+
 def main():
     signal.signal(signal.SIGINT, signal_handler)
     init_settings()
@@ -345,11 +388,18 @@ def main():
             help="view homework",
             action="store_true"
             )
+    parser.add_argument(
+            "--update-settings",
+            help="update settings file",
+            action="store_true"
+            )
     args = parser.parse_args()
     if args.view:
         view_homework()
     elif args.submit:
         submit_homework(args.submit[0])
+    elif args.update_settings:
+        update_credentials()
     else:
         parser.parse_args(["-h"])
 

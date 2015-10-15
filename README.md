@@ -4,12 +4,13 @@ HomeworkServer
 Script to quickly send and receive files to/from the CS Homework Server.
 
 ```
-usage: homeworkserver [-h] [-s FILE] [-v]
+usage: homeworkserver [-h] [-s FILE] [-v] [--update-settings]
 
 optional arguments:
   -h, --help              show this help message and exit
   -s FILE, --submit FILE  submit homework
   -v, --view              view homework
+  --update-settings       update settings file
 ```
 
 Style Guide
@@ -42,6 +43,8 @@ If you do not know their first name, just go onto the homework server and grab i
 The semester is fall/spring + year.
 
 Finally, run `install.sh` from terminal to install.
+
+Alternatively, you could just run `install.sh` and then run the script with the `--update-settings` flag.
 
 TODO
 ----

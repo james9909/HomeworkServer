@@ -5,6 +5,7 @@ function run_with_status {
     local status=$?
     if [ $status -ne 0 ]; then
         echo -e "Error with $@" >&2
+        exit 1
     else
         echo -e "Successfully ran $@"
     fi
@@ -26,7 +27,8 @@ run_with_status git update-index --assume-unchanged settings.conf
 
 run_with_status sudo mkdir ~/.homeworkserver
 run_with_status sudo ln -s $PWD/homeworkserver ~/.homeworkserver/homeworkserver
-run_with_status sudo cp settings.conf ~/.homeworkserver/settings.conf
+run_with_status sudo cp $PWD/settings.conf ~/.homeworkserver/settings.conf
+run_with_status sudo chmod 766 ~/.homeworkserver/settings.conf
 cd
 
 if [ -e ".bash_aliases" ]; then
