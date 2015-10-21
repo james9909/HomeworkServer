@@ -33,18 +33,22 @@ PROXIES = {"http": "http://filtr.nycboe.org:8002",
 
 use_proxy = False
 
+
 def signal_handler(signal, frame):
     """ Intercept signal and print out a message """
     print error_msg("\nExiting...")
     sys.exit(0)
 
+
 def success_msg(msg):
     text = termcolor.colored(msg, "green", attrs=["bold"])
     return text
 
+
 def error_msg(msg):
     text = termcolor.colored(msg, "red", attrs=["bold"])
     return text
+
 
 def init_settings():
     """ Initializes variables based on settings configuration """
@@ -60,6 +64,7 @@ def init_settings():
     TEACHER = config["teacher"]
     SEMESTER = config["semester"]
     URL = "%s/%s/%s/pages.py" % (BASE_URL, TEACHER, SEMESTER)
+
 
 def correct_date(date):
     """ Correct date to comply with datetime format strings """
@@ -83,6 +88,7 @@ def correct_date(date):
 
     return "/".join(date)
 
+
 def is_late(due_date):
     """ Determine if deadline for homework has passed """
     due_date = correct_date(due_date)
@@ -94,6 +100,7 @@ def is_late(due_date):
     if due_date < now:
         return error_msg("- Expired")
     return ""
+
 
 def get_page(page, proxy=False):
     """ Returns html of the requested page """
@@ -114,6 +121,7 @@ def get_page(page, proxy=False):
         sys.exit(1)
 
     return request.text
+
 
 def download_file(url, name=None):
     """ Download file from url """
@@ -144,6 +152,7 @@ def download_file(url, name=None):
     if not url:
         print error_msg("File downloaded as %s" % (file_name))
 
+
 def parse_homeworks(html):
     """ Returns a list of homeworks that have been submitted with their links and submission time """
     soup = BeautifulSoup(html, "lxml", parse_only=SoupStrainer("table"))
@@ -172,6 +181,7 @@ def parse_homeworks(html):
 
     homeworks = collections.OrderedDict(sorted(homeworks.items()))  # Sort homeworks in order
     return homeworks
+
 
 def parse_assignments(html):
     """ Returns a list of homeworks that may be submitted and their due date"""
@@ -202,6 +212,7 @@ def parse_assignments(html):
     # Sort assignments in order
     assignments = collections.OrderedDict(sorted(assignments.items()))
     return assignments
+
 
 def view_homework():
     """
@@ -246,7 +257,7 @@ def view_homework():
             break
 
     link = homeworks[option][0]
-    if link == None:
+    if link is None:
         print error_msg("This homework has not been submitted yet!")
         return None
 
@@ -265,6 +276,7 @@ def view_homework():
         download_file(url)
     os.system("rm /tmp/homeworkserver")  # Remove temporary file
     return None
+
 
 def submit_homework(homework):
     """ Submit homework to the server """
@@ -326,6 +338,7 @@ def submit_homework(homework):
     else:
         print error_msg("Failed to submit file")
 
+
 def update_credentials():
     # Get actual settings file from where the script is located
     path = os.path.join(os.path.dirname(__file__), "settings.conf")
@@ -369,30 +382,31 @@ def update_credentials():
             success_msg("Successfully updated settings")
             sys.exit(0)
 
+
 def main():
     signal.signal(signal.SIGINT, signal_handler)
     init_settings()
     parser = argparse.ArgumentParser(
-            prog='homeworkserver', formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=30)
-            )
+        prog='homeworkserver', formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=30)
+        )
     parser.add_argument(
-            "-s",
-            "--submit",
-            nargs=1,
-            metavar=("FILE"),
-            help="submit homework"
-            )
+        "-s",
+        "--submit",
+        nargs=1,
+        metavar=("FILE"),
+        help="submit homework"
+        )
     parser.add_argument(
-            "-v",
-            "--view",
-            help="view homework",
-            action="store_true"
-            )
+        "-v",
+        "--view",
+        help="view homework",
+        action="store_true"
+        )
     parser.add_argument(
-            "--update-settings",
-            help="update settings file",
-            action="store_true"
-            )
+        "--update-settings",
+        help="update settings file",
+        action="store_true"
+        )
     args = parser.parse_args()
     if args.view:
         view_homework()
