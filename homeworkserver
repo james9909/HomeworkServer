@@ -160,6 +160,7 @@ def parse_homeworks(html):
     homeworks = {}
     for table in soup:
         time = table.find("td", attrs={"style": ["color: green;", "color: red;"]})
+        comment = table.find("pre")
         try:
             time = time.text.encode("ascii", "ignore")
         except AttributeError:
@@ -177,7 +178,10 @@ def parse_homeworks(html):
         except AttributeError:
             label = None
         if label is not None:
-            homeworks[label] = [link, time]
+            if comment is not None:
+                homeworks[label] = [link, time, str(comment.contents[0])]
+            else:
+                homeworks[label] = [link, time, ""]
 
     homeworks = collections.OrderedDict(sorted(homeworks.items()))  # Sort homeworks in order
     return homeworks
@@ -242,11 +246,14 @@ def view_homework():
     # Print out homework and submission status
     for homework in homeworks.keys():
         status = homeworks[homework][1]
+        comment = homeworks[homework][2]
         if "early" in status:
             status = success_msg(status)
         else:
             status = error_msg(status)
         print "[%s]: %s" % (homework, status)
+        if comment:
+            print "Comment to teacher: %s" % (comment)
 
     while True:
         option = raw_input("Which homework would you like to view? ")
