@@ -310,7 +310,8 @@ def submit_homework(homework):
 
     # Print assignment and due date
     for assignment in assignments:
-        print "[%s] %s" % (assignment, assignments[assignment])
+        due_date = assignments[assignment]
+        print "[%s] %s" % (assignment, due_date)
 
     while True:
         option = str(raw_input("Please select a homework to submit: "))
@@ -318,7 +319,16 @@ def submit_homework(homework):
             print error_msg("Invalid choice")
             continue
         else:
-            break
+            # Protect against users accidentally submitting to an old server slot
+            if "Expired" in assignments[option]:
+                print error_msg("You are about to submit a file past its due date. Are you sure you want to continue? [y/n]"),
+                response = raw_input()
+                if response.lower() == "y":
+                    break
+                else:
+                    sys.exit(0)
+            else:
+                break
 
     comment = ""
     answer = str(raw_input("Would you like to write a comment to the teacher? [y/n] "))
