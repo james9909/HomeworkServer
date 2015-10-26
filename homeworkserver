@@ -175,7 +175,7 @@ def parse_homeworks(html):
         comments = table.findAll("pre")
         if is_student_comment:
             student_comment = str(comments[0].contents[0])
-            if teacher_comment:
+            if is_teacher_comment:
                 teacher_comment = str(comments[1].contents[0])
         elif is_teacher_comment:
             teacher_comment = str(comments[0].contents[0])
