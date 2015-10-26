@@ -167,7 +167,18 @@ def parse_homeworks(html):
     homeworks = {}
     for table in soup:
         time = table.find("td", attrs={"style": ["color: green;", "color: red;"]})
-        comment = table.find("pre")
+        comments = table.findAll("td")
+        is_student_comment = "Comment to teacher:" in str(comments)
+        is_teacher_comment = "Teacher's comments:" in str(comments)
+        student_comment = ""
+        teacher_comment = ""
+        comments = table.findAll("pre")
+        if is_student_comment:
+            student_comment = str(comments[0].contents[0])
+            if teacher_comment:
+                teacher_comment = str(comments[1].contents[0])
+        elif is_teacher_comment:
+            teacher_comment = str(comments[0].contents[0])
         try:
             time = time.text.encode("ascii", "ignore")
         except AttributeError:
@@ -185,10 +196,7 @@ def parse_homeworks(html):
         except AttributeError:
             label = None
         if label is not None:
-            if comment is not None:
-                homeworks[label] = [link, time, str(comment.contents[0])]
-            else:
-                homeworks[label] = [link, time, ""]
+            homeworks[label] = [link, time, [student_comment, teacher_comment]]
 
     homeworks = collections.OrderedDict(sorted(homeworks.items()))  # Sort homeworks in order
     return homeworks
@@ -259,8 +267,10 @@ def view_homework():
         else:
             status = error_msg(status)
         print "[%s]: %s" % (homework, status)
-        if comment:
-            print "Comment to teacher: %s" % (comment)
+        if comment[0]:
+            print "Comment to teacher: %s" % (comment[0])
+        if comment[1]:
+            print "Comment to you: %s" % (comment[1])
 
     while True:
         option = raw_input("Which homework would you like to view? ")
