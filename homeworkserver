@@ -282,6 +282,8 @@ def view_homework():
     # Determine whether or not to preview file based on what the file is
     if ("ASCII text" in file_type):
         subprocess.call("cat /tmp/homeworkserver", shell=True)
+    elif ("empty" in file_type):
+        print "The file is empty..."
     else:
         print error_msg("Preview not available for non-text files")
 
