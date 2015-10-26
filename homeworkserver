@@ -34,6 +34,13 @@ PROXIES = {"http": "http://filtr.nycboe.org:8002",
 use_proxy = False
 
 
+def file_stdin():
+    print "Press Ctrl-d when finished"
+    file_contents = sys.stdin.read()
+    file_name = str(raw_input("What would you like to call this file? "))
+    return [file_name, file_contents]
+
+
 def signal_handler(signal, frame):
     """ Intercept signal and print out a message """
     print error_msg("\nExiting...")
@@ -285,10 +292,13 @@ def view_homework():
     return None
 
 
-def submit_homework(homework):
+def submit_homework(homework, stdin=False):
     """ Submit homework to the server """
 
-    if not os.path.isfile(homework):
+    # Check if we using stdin
+    if stdin:
+        pass
+    elif not os.path.isfile(homework):
         print error_msg("File does not exist")
         return None
 
@@ -337,11 +347,20 @@ def submit_homework(homework):
 
     data = {"page": STORE_HOMEWORK, "id4": STUDENT_ID, "classid": PERIOD,
             "assignmentid": str(option), "teacher_comment": comment, "submit": SUBMIT_ASSIGNMENT}
+
+    # If we are taking the file in from stdin, set the file_name and contents accordingly
+    if stdin:
+        file_name = homework[0]
+        file_contents = homework[1]
+    else:
+        file_name = homework
+        file_contents = open(homework, "r")
+
     try:
         if use_proxy:
-            request = requests.post(URL, data=data, proxies=PROXIES, files={"filecontents": (homework, open(homework, "r"))})
+            request = requests.post(URL, data=data, proxies=PROXIES, files={"filecontents": (file_name, file_contents)})
         else:
-            request = requests.post(URL, data=data, files={"filecontents": (homework, open(homework, "r"))})
+            request = requests.post(URL, data=data, files={"filecontents": (file_name, file_contents)})
     except ProxyError:
         print error_msg("Error posting file. There's an error with the following proxies:")
         print urllib.getproxies()
@@ -425,6 +444,11 @@ def main():
         help="update settings file",
         action="store_true"
         )
+    parser.add_argument(
+        "--stdin",
+        help="submit file from stdin",
+        action="store_true"
+        )
     args = parser.parse_args()
     if args.view:
         view_homework()
@@ -432,6 +456,9 @@ def main():
         submit_homework(args.submit[0])
     elif args.update_settings:
         update_credentials()
+    elif args.stdin:
+        result = file_stdin()
+        submit_homework(result, True)
     else:
         parser.parse_args(["-h"])
 
