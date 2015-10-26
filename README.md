@@ -4,13 +4,13 @@ HomeworkServer
 Script to quickly send and receive files to/from the CS Homework Server.
 
 ```
-usage: homeworkserver [-h] [-s FILE] [-v] [--update-settings]
+usage: homeworkserver [-h] [-s FILE] [-v] [-u]
 
 optional arguments:
   -h, --help              show this help message and exit
   -s FILE, --submit FILE  submit homework
   -v, --view              view homework
-  --update-settings       update settings file
+  -u, --update-settings   update settings file
 ```
 
 Style Guide

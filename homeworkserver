@@ -403,6 +403,7 @@ def main():
         action="store_true"
         )
     parser.add_argument(
+        "-u",
         "--update-settings",
         help="update settings file",
         action="store_true"
