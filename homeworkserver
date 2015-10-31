@@ -24,6 +24,7 @@ STUDENT_ID = ""
 BASE_URL = "http://bert.stuy.edu"
 SUBMIT = "submit_homework2"
 SUBMIT_ASSIGNMENT = "Submit this assignment"
+GRADES = "grades2"
 VIEW = "homework_view2"
 STORE_HOMEWORK = "store_homework"
 URL = ""
@@ -233,6 +234,21 @@ def parse_assignments(html):
     return assignments
 
 
+def parse_grades(html):
+    """ Returns a dictionary of assignments and grades"""
+    soup = BeautifulSoup(html, "lxml")
+    grades = {}
+
+    # Find all assignment options and get its title
+    table = soup.find_all("table", attrs={"border": "1"})
+    for tr in table[0].find_all("tr")[1:]:
+        text = tr.text.encode("ascii", "ignore")
+        data = text.split("\n")
+        grades[data[0]] = data[1:]
+
+    return grades
+
+
 def view_homework():
     """
     View homeworks from the server
@@ -431,6 +447,33 @@ def update_credentials():
             sys.exit(0)
 
 
+def view_grades():
+    page = get_page(GRADES)
+
+    if "not found" in page:
+        print error_msg("Page not found")
+        return None
+    elif "Incorrect password" in page:
+        print error_msg("Invalid credentials")
+        return None
+    elif "Cannot find class" in page:
+        print error_msg("Invalid period")
+        return None
+    elif "Access to this site is blocked" in page:  # School proxy :(
+        page = get_page(GRADES, True)
+
+    grades = parse_grades(page)
+    for assignment in grades:
+        scores = grades[assignment]
+        my_score = int(scores[0])
+        max_score = int(scores[1])
+        if my_score / (max_score * 1.0) <= .65:
+            my_score = error_msg(my_score)
+        else:
+            my_score = success_msg(my_score)
+        print "[%s] - %s/%s points" % (assignment, my_score, max_score)
+
+
 def main():
     signal.signal(signal.SIGINT, signal_handler)
     init_settings()
@@ -451,6 +494,12 @@ def main():
         action="store_true"
         )
     parser.add_argument(
+        "-g",
+        "--grades",
+        help="view grades",
+        action="store_true"
+        )
+    parser.add_argument(
         "-u",
         "--update-settings",
         help="update settings file",
@@ -466,6 +515,8 @@ def main():
         view_homework()
     elif args.submit:
         submit_homework(args.submit[0])
+    elif args.grades:
+        view_grades()
     elif args.update_settings:
         update_credentials()
     elif args.stdin:
