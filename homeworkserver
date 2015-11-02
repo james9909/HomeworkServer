@@ -71,6 +71,7 @@ def init_settings():
     STUDENT_ID = config["id"]
     TEACHER = config["teacher"]
     SEMESTER = config["semester"]
+    NAME = "%s;%s" % (STUDENT_ID, NAME)
     URL = "%s/%s/%s/pages.py" % (BASE_URL, TEACHER, SEMESTER)
 
 

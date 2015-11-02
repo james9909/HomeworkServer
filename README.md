@@ -27,7 +27,7 @@ To setup the script to use your account, open up `settings.conf` and replace the
 Here's an example config:
 
 ```
-name = "3497;Wang, James"
+name = "Wang, James"
 password = "password"
 period = "p9"
 id = "3497"
@@ -35,7 +35,7 @@ teacher = "cbrown"
 semester = "fall2015"
 ```
 
-The name consists of your 4 digit id, and full name, delimited by a semicolon.
+The name consists of your last name followed by your first name.
 
 The period is a combination of 'p' and the period you have class.
 
