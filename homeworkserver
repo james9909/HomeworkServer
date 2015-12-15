@@ -38,8 +38,7 @@ use_proxy = False
 def file_stdin():
     print "Press Ctrl-d when finished"
     file_contents = sys.stdin.read()
-    file_name = str(raw_input("What would you like to call this file? "))
-    return [file_name, file_contents]
+    return ["thisisarandomfilename", file_contents]
 
 
 def signal_handler(signal, frame):
