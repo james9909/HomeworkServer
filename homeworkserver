@@ -421,7 +421,7 @@ def update_credentials():
         print "7)  Done"
         option = str(raw_input("\nWhat would you like to do? "))
         if option == "1":
-            name = str(raw_input("Please enter your new username: (ID;last, first) "))
+            name = str(raw_input("Please enter your new username: (Last, First) "))
             settings[0] = "name = \"%s\"\n" % (name)
         elif option == "2":
             password = str(raw_input("Please enter your new password: "))
