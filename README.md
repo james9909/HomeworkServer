@@ -33,6 +33,8 @@ period = "p9"
 id = "3497"
 teacher = "cbrown"
 semester = "fall2015"
+semester = "fall2015"
+osis = "123456789"
 ```
 
 The name consists of your last name followed by your first name.
@@ -43,6 +45,8 @@ The teacher's name is the first letter of their first name, combined with their 
 If you do not know their first name, just go onto the homework server and grab it from the url.
 
 The semester is fall/spring + year.
+
+Osis is your 9 digit osis number.
 
 Finally, run `install.sh` from terminal to install.
 
