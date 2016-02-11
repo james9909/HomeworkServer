@@ -33,7 +33,6 @@ period = "p9"
 id = "3497"
 teacher = "cbrown"
 semester = "fall2015"
-semester = "fall2015"
 osis = "123456789"
 ```
 
