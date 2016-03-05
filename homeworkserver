@@ -2,6 +2,7 @@
 
 import argparse
 import collections
+import getpass
 import os
 import signal
 import subprocess
@@ -25,6 +26,8 @@ BASE_URL = "http://bert.stuy.edu"
 SUBMIT = "submit_homework2"
 SUBMIT_ASSIGNMENT = "Submit this assignment"
 GRADES = "grades2"
+PROFILE = "do_profile"
+UPDATE_PROFILE = "do_profile2"
 VIEW = "homework_view2"
 STORE_HOMEWORK = "store_homework"
 URL = ""
@@ -483,6 +486,88 @@ def view_grades():
         print "[%s] - %s/%s points" % (assignment, my_score, max_score)
 
 
+def parse_profile(html):
+    soup = BeautifulSoup(html, "lxml")
+    data = {}
+
+    data["email"] = soup.find("input", {"name":"email"})["value"]
+    data["phone"] = soup.find("input", {"name":"phone"})["value"]
+    data["prefname"] = soup.find("input", {"name":"prefname"})["value"]
+    return data
+
+
+def view_profile():
+    page = get_page(PROFILE)
+    if "not found" in page:
+        print error_msg("Page not found")
+        return None
+    elif "Incorrect password" in page:
+        print error_msg("Invalid credentials")
+        return None
+    elif "Cannot find class" in page:
+        print error_msg("Invalid period")
+        return None
+    elif "Access to this site is blocked" in page:  # School proxy :(
+        page = get_page(GRADES, True)
+
+    data = parse_profile(page)
+    for key in data.keys():
+        print "%s: %s" % (key, data[key])
+
+    return data
+
+
+def update_profile():
+    while True:
+        print "================================================================"
+        data = view_profile()
+        if data is None:
+            return
+        data["id4"] = STUDENT_ID
+        data["page"] = UPDATE_PROFILE
+        print "================================================================"
+        print "1) Update email"
+        print "2) Update phone number"
+        print "3) Update preferred first name"
+        print "4) Update password"
+        print "5) Exit"
+        choice = raw_input("What would you like to do? ")
+        if choice == "1":
+            email = raw_input("What is your email? ")
+            data["email"] = email
+            data["submit"] = "Change profile"
+        elif choice == "2":
+            phone_number = raw_input("What is your phone number? ")
+            data["phone"] = phone_number
+            data["submit"] = "Change profile"
+        elif choice == "3":
+            name = raw_input("What is your preferred first name? ")
+            data["prefname"] = name
+            data["submit"] = "Change profile"
+        elif choice == "4":
+            password = getpass.getpass(prompt="What is your new password? ")
+            password_confirm = getpass.getpass(prompt="Confirm your password: ")
+            if password != password_confirm:
+                print "Passwords do not match"
+            if password == "":
+                print "Password cannot be empty"
+            data["password"] = password
+            data["password2"] = password_confirm
+            data["submit"] = "Change password"
+        elif choice == "5":
+            return
+
+        response = requests.post(URL, data=data).text
+        if "Password updated" in response:
+            print "Password updated"
+            print "Remember to change your settings using --update-settings"
+            continue
+        if "Profile modified" in response:
+            print "Profile modified"
+        else:
+            print "Could not update profile"
+
+
 def main():
     signal.signal(signal.SIGINT, signal_handler)
     init_settings()
@@ -519,6 +604,16 @@ def main():
         help="submit file from stdin",
         action="store_true"
         )
+    parser.add_argument(
+        "--view-profile",
+        help="view profile",
+        action="store_true"
+    )
+    parser.add_argument(
+        "--update-profile",
+        help="update profile on the server",
+        action="store_true"
+    )
     args = parser.parse_args()
     if args.view:
         view_homework()
@@ -531,6 +626,10 @@ def main():
     elif args.stdin:
         result = file_stdin()
         submit_homework(result, True)
+    elif args.view_profile:
+        view_profile()
+    elif args.update_profile:
+        update_profile()
     else:
         parser.parse_args(["-h"])
 
