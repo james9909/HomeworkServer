@@ -136,7 +136,21 @@ def get_page(page, proxy=False):
         print error_msg("Error requesting page. Are you connected to the internet?")
         sys.exit(1)
 
-    return request.text
+    page = request.text
+
+    if "not found" in page:
+        print error_msg("Page not found")
+        return None
+    elif "Incorrect password" in page:
+        print error_msg("Invalid credentials")
+        return None
+    elif "Cannot find class" in page:
+        print error_msg("Invalid period")
+        return None
+    elif "Access to this site is blocked" in page:  # School proxy :(
+        page = get_page(page, True)
+
+    return page
 
 
 def download_file(url, name=None):
@@ -265,17 +279,8 @@ def view_homework():
     """
     page = get_page(VIEW)
 
-    if "not found" in page:
-        print error_msg("Page not found")
+    if page is None:
         return None
-    elif "Incorrect password" in page:
-        print error_msg("Invalid credentials")
-        return None
-    elif "Cannot find class" in page:
-        print error_msg("Invalid period")
-        return None
-    elif "Access to this site is blocked" in page:  # School proxy :(
-        page = get_page(VIEW, True)
 
     homeworks = parse_homeworks(page)
     if len(homeworks) == 0:
@@ -340,17 +345,8 @@ def submit_homework(homework, stdin=False):
 
     page = get_page(SUBMIT)
 
-    if "not found" in page:
-        print error_msg("Page not found")
+    if page is None:
         return None
-    elif "Incorrect password" in page:
-        print error_msg("Invalid credentials")
-        return None
-    elif "Cannot find class" in page:
-        print error_msg("Invalid period")
-        return None
-    elif "Access to this site is blocked" in page:  # School proxy :(
-        page = get_page(SUBMIT, True)
 
     assignments = parse_assignments(page)
 
@@ -464,17 +460,8 @@ def update_credentials():
 def view_grades():
     page = get_page(GRADES)
 
-    if "not found" in page:
-        print error_msg("Page not found")
+    if page is None:
         return None
-    elif "Incorrect password" in page:
-        print error_msg("Invalid credentials")
-        return None
-    elif "Cannot find class" in page:
-        print error_msg("Invalid period")
-        return None
-    elif "Access to this site is blocked" in page:  # School proxy :(
-        page = get_page(GRADES, True)
 
     grades = parse_grades(page)
     for assignment in grades:
@@ -500,17 +487,6 @@ def parse_profile(html):
 
 def view_profile():
     page = get_page(PROFILE)
-    if "not found" in page:
-        print error_msg("Page not found")
-        return None
-    elif "Incorrect password" in page:
-        print error_msg("Invalid credentials")
-        return None
-    elif "Cannot find class" in page:
-        print error_msg("Invalid period")
-        return None
-    elif "Access to this site is blocked" in page:  # School proxy :(
-        page = get_page(GRADES, True)
 
     data = parse_profile(page)
     for key in data.keys():
