@@ -39,18 +39,45 @@ use_proxy = False
 
 
 def file_stdin():
+    r"""Read user input from stdin
+
+    Returns
+    -------
+    list
+        A list where the the first index contains the string "thisisarandomfilename" and the second
+        index contains the contents of the user input.
+    """
+
     print "Press Ctrl-d when finished"
     file_contents = sys.stdin.read()
     return ["thisisarandomfilename", file_contents]
 
 
 def signal_handler(signal, frame):
-    """ Intercept signal and print out a message """
+    r""" Intercept signal and print out a message """
+
     print error_msg("\nExiting...")
     sys.exit(0)
 
 
 def success_msg(msg):
+    r"""Format a string to indicate success
+
+    Parameters
+    ----------
+    msg : str
+        String to format
+
+    Returns
+    -------
+    str
+        Formatted string that will be green when printed
+
+    Example
+    -------
+    >>> print success_msg("Success!")
+    """
+
     text = termcolor.colored(msg, "green", attrs=["bold"])
     return text
 
@@ -61,7 +88,8 @@ def error_msg(msg):
 
 
 def init_settings():
-    """ Initializes variables based on settings configuration """
+    r"""Initialize variables based on settings configuration"""
+
     global NAME, PASSWORD, PERIOD, STUDENT_ID, TEACHER, SEMESTER, URL
     path = os.path.join(os.path.dirname(__file__), "settings.conf")
     config = {}
@@ -83,7 +111,26 @@ def init_settings():
 
 
 def correct_date(date):
-    """ Correct date to comply with datetime format strings """
+    r"""Correct date to comply with datetime format strings
+
+
+    Parameters
+    ----------
+    date : string
+        Date in the format "M/D/Y h:mm[a/p]"
+
+    Returns
+    -------
+    str
+        Formatted date with padding zeroes and in military time
+
+    Examples
+    -------
+    >>> correct_date("1/1/16 8:00a")
+    "01/01/2016 8:00"
+    >>> correct_date("03/07/2016 3:00p")
+    "03/07/2016 15:00"
+    """
     date = date.split("/")
     if len(date[0]) != 2:  # Fix month by appending 0
         date[0] = "0" + date[0]
@@ -106,7 +153,19 @@ def correct_date(date):
 
 
 def is_late(due_date):
-    """ Determine if deadline for homework has passed """
+    r"""Determine if deadline for homework has passed
+
+    Parameters
+    ----------
+    due_date : str
+        String representing the date
+
+    Returns
+    -------
+    str
+        error_msg("- Expired") if the due_date has passed the current date
+        "" if the due date has not expired
+    """
     due_date = correct_date(due_date)
     try:
         due_date = datetime.strptime(due_date, "%m/%d/%Y %H")
@@ -119,7 +178,24 @@ def is_late(due_date):
 
 
 def get_page(page, proxy=False):
-    """ Returns html of the requested page """
+    r"""Returns html of the requested page
+
+    Parameters
+    ----------
+    page : str
+        Page on the homework server to request
+    proxy : boolean, optional
+        Use nyc doe proxy to request page (defaults to False)
+
+    Returns
+    -------
+    str
+        String containing the html of the requested page
+
+    Notes
+    -----
+    Will try to automatically use the nyc doe if necessary
+    """
     global use_proxy
     data = {"classes": PERIOD, "students": NAME, "password": PASSWORD, "Submit": "Submit", "page": page}
     try:
@@ -154,7 +230,15 @@ def get_page(page, proxy=False):
 
 
 def download_file(url, name=None):
-    """ Download file from url """
+    r"""Download file from url
+
+    Parameters
+    ----------
+    url : str
+        Url to download
+    name : str, optional
+        Name to save the file as (defaults to the basename of the url)
+    """
     if name:
         file_name = name
     else:
@@ -184,7 +268,25 @@ def download_file(url, name=None):
 
 
 def parse_homeworks(html):
-    """ Returns a list of homeworks that have been submitted with their links and submission time """
+    r"""Get a list of homeworks that have been submitted with their links and submission time
+    from the homework submission html
+
+    Parameters
+    ----------
+    html : str
+        Html of the view homeworks page, containing the submissions to be parsed
+
+    Returns
+    -------
+    dict
+        A dictionary containing the homework title as the key and a list containing the
+        link, submission time, and another list of the student/teacher comments about that homework
+
+    Example
+    -------
+    >>> print parse_homeworks(html)
+    {"HW01": ["www.bert.stuy.edu/homework.txt", "03/01/2015 8:00a", ["my comment", "teacher comment"]]}
+    """
     soup = BeautifulSoup(html, "lxml", parse_only=SoupStrainer("table"))
 
     homeworks = {}
@@ -226,7 +328,27 @@ def parse_homeworks(html):
 
 
 def parse_assignments(html):
-    """ Returns a list of homeworks that may be submitted and their due date"""
+    r"""Get all homeworks that may be submitted and their due date from the assignment
+    html page
+
+    Parameters
+    ----------
+    html : str
+        Html of the homework assignment page, containing the homeworks to be parsed
+
+    Returns
+    -------
+    dict
+        A dictionary where each key is the homework name and each value is the
+        due date and whether its expired or not
+
+    Examples
+    -------
+    >>> print parse_assignments(html)
+    {"HW01": "01/10/3000 8:00a"}
+    >>> print parse_assignments(html)
+    {"HW01": "02/30/1970 8:00a - Expired"}
+    """
     soup = BeautifulSoup(html, "lxml")
     titles = []
 
@@ -257,7 +379,19 @@ def parse_assignments(html):
 
 
 def parse_grades(html):
-    """ Returns a dictionary of assignments and grades"""
+    r"""Get grades from the server from the grades html page
+
+    Parameters
+    ----------
+    html : str
+        Html of the grades page, containing the grades to be parsed
+
+    Returns
+    -------
+    dict
+        A dictionary where each key is the assignment name, with the grade as the key
+    """
+
     soup = BeautifulSoup(html, "lxml")
     grades = {}
 
@@ -277,6 +411,7 @@ def view_homework():
 
     Will show the contents of the file (if it's readable) before prompting a download
     """
+
     page = get_page(VIEW)
 
     if page is None:
@@ -334,7 +469,16 @@ def view_homework():
 
 
 def submit_homework(homework, stdin=False):
-    """ Submit homework to the server """
+    r"""Submit homework to the server
+
+    Parameters
+    ----------
+    homework : str
+        File to submit
+
+    stdin : boolean, optional
+        Submit homework from stdin (defaults to False)
+    """
 
     # Check if we using stdin
     if stdin:
@@ -408,6 +552,8 @@ def submit_homework(homework, stdin=False):
 
 
 def update_credentials():
+    r"""Update settings file"""
+
     # Get actual settings file from where the script is located
     path = os.path.join(os.path.dirname(__file__), "settings.conf")
     while True:
@@ -458,6 +604,7 @@ def update_credentials():
 
 
 def view_grades():
+    r"""Print each graded assignment along with its score"""
     page = get_page(GRADES)
 
     if page is None:
@@ -476,6 +623,20 @@ def view_grades():
 
 
 def parse_profile(html):
+    r"""Parse profile information from the server from its html
+
+    Parameters
+    ----------
+    html : str
+        Html from the profile page
+
+    Returns
+    -------
+    dict
+        Dictionary containing the email, phone number, and preferred first name as set
+        on the profile page
+    """
+
     soup = BeautifulSoup(html, "lxml")
     data = {}
 
@@ -486,6 +647,7 @@ def parse_profile(html):
 
 
 def view_profile():
+    r"""Print profile information"""
     page = get_page(PROFILE)
 
     data = parse_profile(page)
@@ -496,6 +658,7 @@ def view_profile():
 
 
 def update_profile():
+    r"""Update profile information on the server"""
     while True:
         print "================================================================"
         data = view_profile()
