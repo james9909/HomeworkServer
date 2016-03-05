@@ -414,9 +414,9 @@ def submit_homework(homework, stdin=False):
 def update_credentials():
     # Get actual settings file from where the script is located
     path = os.path.join(os.path.dirname(__file__), "settings.conf")
-    f = open(path, "r")
-    settings = f.readlines()
     while True:
+        f = open(path, "r")
+        settings = f.readlines()
         print "================================================================="
         print "Current config:"
         print "".join(settings)
@@ -451,12 +451,14 @@ def update_credentials():
             osis = str(raw_input("Please enter your osis: ([\d]{9})"))
             settings[6] = "osis = \"%s\"" % (osis)
         elif option == "8":
-            f.close()
-            f = open(path, "w")
-            f.write("".join(settings))
-            f.close()
-            success_msg("Successfully updated settings")
-            sys.exit(0)
+            return
+        else:
+            continue
+
+        f.close()
+        f = open(path, "w")
+        f.write("".join(settings))
+        f.close()
 
 
 def view_grades():
@@ -556,6 +558,8 @@ def update_profile():
             data["submit"] = "Change password"
         elif choice == "5":
             return
+        else:
+            continue
 
         response = requests.post(URL, data=data).text
         if "Password updated" in response:
