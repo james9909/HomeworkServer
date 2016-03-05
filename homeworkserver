@@ -429,7 +429,7 @@ def update_credentials():
             name = str(raw_input("Please enter your new username: (Last, First) "))
             settings[0] = "name = \"%s\"\n" % (name)
         elif option == "2":
-            password = str(raw_input("Please enter your new password: "))
+            password = getpass.getpass(prompt="Please enter your new password: ")
             settings[1] = "password = \"%s\"\n" % (password)
         elif option == "3":
             period = str(raw_input("Please enter your new period: (p<1-10>) "))
@@ -441,10 +441,10 @@ def update_credentials():
             teacher = str(raw_input("Please enter the name of your new teacher: (first[0]+last) "))
             settings[4] = "teacher = \"%s\"\n" % (teacher)
         elif option == "6":
-            semester = str(raw_input("Please enter your new semester: (<fall/spring>+year)"))
+            semester = str(raw_input("Please enter your new semester: (<fall/spring>+year) "))
             settings[5] = "semester = \"%s\"\n" % (semester)
         elif option == "7":
-            osis = str(raw_input("Please enter your osis: ([\d]{9})"))
+            osis = str(raw_input("Please enter your osis: ([\d]{9}) "))
             settings[6] = "osis = \"%s\"" % (osis)
         elif option == "8":
             return
@@ -539,13 +539,13 @@ def update_profile():
 
         response = requests.post(URL, data=data).text
         if "Password updated" in response:
-            print "Password updated"
-            print "Remember to change your settings using --update-settings"
+            print success_msg("Password updated")
+            print success_msg("Remember to change your settings using --update-settings")
             continue
         if "Profile modified" in response:
-            print "Profile modified"
+            print success_msg("Profile modified")
         else:
-            print "Could not update profile"
+            print error_msg("Could not update profile")
 
 
 def main():
