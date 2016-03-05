@@ -83,6 +83,23 @@ def success_msg(msg):
 
 
 def error_msg(msg):
+    r"""Format a string to indicate an error
+
+    Parameters
+    ----------
+    msg : str
+        String to format
+
+    Returns
+    -------
+    str
+        Formatted string that will be red when printed
+
+    Example
+    -------
+    >>> print error_msg("Error!")
+    """
+
     text = termcolor.colored(msg, "red", attrs=["bold"])
     return text
 
@@ -131,6 +148,7 @@ def correct_date(date):
     >>> correct_date("03/07/2016 3:00p")
     "03/07/2016 15:00"
     """
+
     date = date.split("/")
     if len(date[0]) != 2:  # Fix month by appending 0
         date[0] = "0" + date[0]
@@ -166,6 +184,7 @@ def is_late(due_date):
         error_msg("- Expired") if the due_date has passed the current date
         "" if the due date has not expired
     """
+
     due_date = correct_date(due_date)
     try:
         due_date = datetime.strptime(due_date, "%m/%d/%Y %H")
@@ -196,6 +215,7 @@ def get_page(page, proxy=False):
     -----
     Will try to automatically use the nyc doe if necessary
     """
+
     global use_proxy
     data = {"classes": PERIOD, "students": NAME, "password": PASSWORD, "Submit": "Submit", "page": page}
     try:
@@ -239,6 +259,7 @@ def download_file(url, name=None):
     name : str, optional
         Name to save the file as (defaults to the basename of the url)
     """
+
     if name:
         file_name = name
     else:
@@ -287,6 +308,7 @@ def parse_homeworks(html):
     >>> print parse_homeworks(html)
     {"HW01": ["www.bert.stuy.edu/homework.txt", "03/01/2015 8:00a", ["my comment", "teacher comment"]]}
     """
+
     soup = BeautifulSoup(html, "lxml", parse_only=SoupStrainer("table"))
 
     homeworks = {}
@@ -349,6 +371,7 @@ def parse_assignments(html):
     >>> print parse_assignments(html)
     {"HW01": "02/30/1970 8:00a - Expired"}
     """
+
     soup = BeautifulSoup(html, "lxml")
     titles = []
 
@@ -605,6 +628,7 @@ def update_credentials():
 
 def view_grades():
     r"""Print each graded assignment along with its score"""
+
     page = get_page(GRADES)
 
     if page is None:
@@ -648,6 +672,7 @@ def parse_profile(html):
 
 def view_profile():
     r"""Print profile information"""
+
     page = get_page(PROFILE)
 
     data = parse_profile(page)
@@ -659,6 +684,7 @@ def view_profile():
 
 def update_profile():
     r"""Update profile information on the server"""
+
     while True:
         print "================================================================"
         data = view_profile()
