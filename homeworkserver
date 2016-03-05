@@ -57,7 +57,7 @@ def signal_handler(signal, frame):
     r""" Intercept signal and print out a message """
 
     print error_msg("\nExiting...")
-    sys.exit(0)
+    sys.exit(signal)
 
 
 def success_msg(msg):
