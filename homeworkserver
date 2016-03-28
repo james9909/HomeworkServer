@@ -452,7 +452,7 @@ def view_homework():
     for homework in homeworks.keys():
         status = homeworks[homework][1]
         comment = homeworks[homework][2]
-        if "early" in status:
+        if "early" in status or "On time" in status:
             status = success_msg(status)
         else:
             status = error_msg(status)
